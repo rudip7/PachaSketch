@@ -96,16 +96,16 @@ public class PachaSketch {
         return mappings;
     }
 
-    public PachaSketch update(Object[] element) {
+    public void update(String[] element) {
         // Extract categorical and numerical values
         List<String> catValues = new ArrayList<>(catColMap.length);
         int[] numValues = new int[numColMap.length];
 
         for (int i = 0; i < catColMap.length; i++) {
-            catValues.add((String) element[catColMap[i]]);
+            catValues.add(element[catColMap[i]]);
         }
         for (int i = 0; i < numColMap.length; i++) {
-            numValues[i] = (int) element[numColMap[i]];
+            numValues[i] = Integer.parseInt(element[numColMap[i]]);
         }
 
         // Update max and min values for numerical dimensions
@@ -155,7 +155,6 @@ public class PachaSketch {
         }
 
         processedElements++;
-        return this;
     }
 
     public int[][] minimalSpatialBAdicCover(int[] numDimensions, int[][] numPredicates, int reducedToLevel) {
@@ -362,14 +361,14 @@ public class PachaSketch {
         List<Set<String>> catPredicates = new ArrayList<>(catColMap.length);
         for(int idx : catColMap) {
             Object catPredicate = query.get(idx);
-            if (catPredicate instanceof Set) {
-                catPredicates.add(new HashSet<>(((Set<?>) catPredicate).stream()
+            if (catPredicate instanceof List<?>) {
+                catPredicates.add(new HashSet<>(((List<?>) catPredicate).stream()
                         .map(Object::toString)
                         .collect(Collectors.toSet())));
             } else if (catPredicate instanceof String && catPredicate.equals("*")) {
                 catPredicates.add(new HashSet<>(Collections.singleton("*")));
             } else {
-                throw new IllegalArgumentException("Query predicate at index " + idx + " expected to be a set or '*'.");
+                throw new IllegalArgumentException("Query predicate at index " + idx + " expected to be a list or '*'.");
             }
         }
 
@@ -379,9 +378,9 @@ public class PachaSketch {
         int numIdx = 0;
         for(int idx : numColMap) {
             Object numPredicate = query.get(idx);
-            if ((numPredicate instanceof int[] bounds) && bounds.length == 2) {
-                int lower = bounds[0];
-                int upper = bounds[1];
+            if ((numPredicate instanceof List<?> bounds) && bounds.size() == 2) {
+                int lower = ((Double) bounds.get(0)).intValue();
+                int upper = ((Double) bounds.get(1)).intValue();
                 if (lower > upper) {
                     throw new IllegalArgumentException("Lower bound cannot be greater than upper bound.");
                 }
@@ -391,7 +390,7 @@ public class PachaSketch {
                 numPredicates.add(new int[]{minValues[numIdx], maxValues[numIdx]});
             } else {
                 throw new IllegalArgumentException("Query predicate at index " + idx +
-                        " expected to be an array int[2] with [lower_bound, upper_bound] or '*'.");
+                        " expected to be a numerical list of size 2 with [lower_bound, upper_bound] or '*'.");
             }
             numIdx++;
         }
