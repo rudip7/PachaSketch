@@ -32,7 +32,7 @@ public class BloomFilter implements Filter{
         }
     }
 
-    public static BloomFilter buildFromGuarantees(float falsePositiveRate, int expectedElements) {
+    public static BloomFilter buildFromGuarantees(double falsePositiveRate, int expectedElements) {
         // Calculate size and number of hash functions based on false positive rate and expected elements
         int size = (int) Math.ceil(-expectedElements * Math.log(falsePositiveRate) / (Math.log(2) * Math.log(2)));
         int numHashFunctions = (int) Math.ceil(Math.log(2) * size / expectedElements);

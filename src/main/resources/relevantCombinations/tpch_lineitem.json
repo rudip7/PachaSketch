@@ -1,0 +1,19 @@
+{"attribute_names": ["n_shipdate", "n_commitdate", "n_receiptdate", "n_extendedprice", "n_quantity"],
+  "relevant_combinations": [
+    ["n_shipdate"],
+    ["n_commitdate"],
+    ["n_receiptdate"],
+    ["n_extendedprice"],
+    ["n_quantity"],
+
+    ["n_shipdate", "n_commitdate"],
+    ["n_shipdate", "n_receiptdate"],
+    ["n_shipdate", "n_quantity"],
+    ["n_commitdate", "n_receiptdate"],
+    ["n_commitdate", "n_extendedprice"],
+    ["n_extendedprice", "n_quantity"],
+
+    ["n_commitdate", "n_receiptdate", "n_extendedprice"],
+
+    ["n_shipdate", "n_commitdate", "n_receiptdate", "n_extendedprice", "n_quantity"]
+  ]}

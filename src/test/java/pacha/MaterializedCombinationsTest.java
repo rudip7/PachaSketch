@@ -4,6 +4,8 @@ import org.junit.jupiter.api.Test;
 import pachasketch.pacha.components.MaterializedCombinations;
 
 import static org.junit.jupiter.api.Assertions.*;
+
+import java.io.IOException;
 import java.util.*;
 
 class MaterializedCombinationsTest {
@@ -107,6 +109,22 @@ class MaterializedCombinationsTest {
         assertTrue(combinations.contains(Arrays.asList("B", "C")));
         assertTrue(combinations.contains(Arrays.asList("A", "C")));
         assertTrue(combinations.contains(Arrays.asList("A", "B", "C")));
+    }
+
+
+    @Test
+    void fromJsonCreatesCorrectInstanceFromFile() throws IOException {
+        // Path to the JSON file
+        String jsonFilePath = "src/main/resources/relevantCombinations/tpch_lineitem.json";
+
+        // Create MaterializedCombinations from the JSON file
+        MaterializedCombinations result = MaterializedCombinations.fromJson(jsonFilePath);
+
+        // Validate the instance
+        assertEquals(Arrays.asList("n_shipdate", "n_commitdate", "n_receiptdate", "n_extendedprice", "n_quantity"), result.getAttributeNames());
+        assertTrue(result.getRelevantCombinations().contains(Arrays.asList("n_shipdate")));
+        assertTrue(result.getRelevantCombinations().contains(Arrays.asList("n_commitdate", "n_receiptdate", "n_extendedprice")));
+        assertTrue(result.getRelevantCombinations().contains(Arrays.asList("n_shipdate", "n_commitdate", "n_receiptdate", "n_extendedprice", "n_quantity")));
     }
 
 }

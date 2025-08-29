@@ -2,7 +2,7 @@ package pacha;
 
 import org.junit.jupiter.api.Test;
 import pachasketch.pacha.PachaSketch;
-import pachasketch.pacha.PachaSketchFactory;
+import pachasketch.utils.PachaSketchFactory;
 import pachasketch.pacha.components.ADTree;
 import pachasketch.pacha.components.MaterializedCombinations;
 import pachasketch.pacha.utils.QueryResult;
@@ -38,7 +38,7 @@ public class PachaSketchTest {
         int width = 100;
         int depth = 3;
 
-        return PachaSketchFactory.createSizeParameters(levels, catColMap, numColMap, bases, adTree,
+        return PachaSketchFactory.buildWithSizeParameters(catColMap, numColMap, levels, bases, adTree,
                 materialized, catIndexK, catIndexM, numIndexK, numIndexM, regionIndexK, regionIndexM,
                 width, depth);
     }
@@ -50,16 +50,16 @@ public class PachaSketchTest {
     }
 
     private void addFakeData(PachaSketch sketch) {
-        sketch.update(new Object[]{"a1", "b1", "c1", 0, 20});
-        sketch.update(new Object[]{"a1", "b1", "c1", 0, 20});
-        sketch.update(new Object[]{"a1", "b1", "c1", 0, 20});
-        sketch.update(new Object[]{"a1", "b1", "c1", 0, 21});
-        sketch.update(new Object[]{"a1", "b1", "c1", 0, 22});
-        sketch.update(new Object[]{"a1", "b1", "c1", 1, 22});
-        sketch.update(new Object[]{"a1", "b1", "c1", 1, 20});
-        sketch.update(new Object[]{"a1", "b1", "c1", 1, 21});
-        sketch.update(new Object[]{"a1", "b1", "c1", 1, 19});
-        sketch.update(new Object[]{"a1", "b1", "c1", 1, 18});
+        sketch.update(new String[]{"a1", "b1", "c1", "0", "20"});
+        sketch.update(new String[]{"a1", "b1", "c1", "0", "20"});
+        sketch.update(new String[]{"a1", "b1", "c1", "0", "20"});
+        sketch.update(new String[]{"a1", "b1", "c1", "0", "21"});
+        sketch.update(new String[]{"a1", "b1", "c1", "0", "22"});
+        sketch.update(new String[]{"a1", "b1", "c1", "1", "22"});
+        sketch.update(new String[]{"a1", "b1", "c1", "1", "20"});
+        sketch.update(new String[]{"a1", "b1", "c1", "1", "21"});
+        sketch.update(new String[]{"a1", "b1", "c1", "1", "19"});
+        sketch.update(new String[]{"a1", "b1", "c1", "1", "18"});
     }
 
 
@@ -127,7 +127,7 @@ public class PachaSketchTest {
     @Test
     void updateShouldUpdateAllComponents() {
         PachaSketch sketch = buildSketchToTest();
-        Object[] element = {"a1", "b1", "c1", 5, 20};
+        String[] element = {"a1", "b1", "c1", "5", "20"};
 
         sketch.update(element);
 

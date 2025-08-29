@@ -1,5 +1,10 @@
 package pachasketch.pacha.components;
 
+import com.google.gson.Gson;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 
 public class MaterializedCombinations {
@@ -120,7 +125,7 @@ public class MaterializedCombinations {
     }
 
     public static MaterializedCombinations fromJson(Map<String, Object> json) {
-        List<String> colNames = (List<String>) json.get("col_names");
+        List<String> colNames = (List<String>) json.get("attribute_names");
         List<List<String>> relevantCombinations = (List<List<String>>) json.get("relevant_combinations");
         return new MaterializedCombinations(colNames, relevantCombinations);
     }
@@ -168,5 +173,19 @@ public class MaterializedCombinations {
         return Arrays.stream(invertedBits)
                 .map(int[]::clone)
                 .toArray(int[][]::new);
+    }
+
+    public int getNumCombinations() {
+        return relevantCombinations.size();
+    }
+
+    public static MaterializedCombinations fromJson(String jsonFilePath) throws IOException {
+        String jsonContent = new String(Files.readAllBytes(Paths.get(jsonFilePath)));
+
+        // Parse the JSON content into a Map using Gson
+        Gson gson = new Gson();
+        Map<String, Object> json = gson.fromJson(jsonContent, Map.class);
+
+        return MaterializedCombinations.fromJson(json);
     }
 }

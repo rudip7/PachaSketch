@@ -1,12 +1,17 @@
 package pachasketch.pacha.components;
 
+import com.google.gson.Gson;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class ADTree {
     private int numDimensions;
     private List<Set<String>> possibleValues;
-    private List<String> attributeNames;
+    public List<String> attributeNames;
     private boolean collapsed;
 
     public ADTree() {
@@ -104,7 +109,13 @@ public class ADTree {
         return cartesianProduct;
     }
 
-
+    public int getNumberUpdates(){
+        if(this.collapsed){
+            return this.numDimensions;
+        } else {
+            return this.numDimensions + 1;
+        }
+    }
 
 
 
@@ -145,13 +156,25 @@ public class ADTree {
 
     public static ADTree fromJson(Map<String, Object> json) {
         ADTree adTree = new ADTree();
-        adTree.numDimensions = (int) json.get("num_dimensions");
-        adTree.possibleValues = ((List<List<String>>) json.get("possible_values"))
-                .stream()
-                .map(HashSet::new)
-                .collect(Collectors.toList());
+        adTree.numDimensions = ((Double) json.get("num_dimensions")).intValue();
+        adTree.possibleValues = ((List<?>) json.get("possible_values"))
+            .stream()
+            .map(list -> ((List<?>) list).stream().map(Object::toString).collect(Collectors.toSet()))
+            .collect(Collectors.toList());
         adTree.attributeNames = (List<String>) json.get("names");
-        adTree.collapsed = (boolean) json.get("collapsed");
+        if (json.get("collapsed") != null) {
+            adTree.collapsed = (boolean) json.get("collapsed");
+        }
         return adTree;
+    }
+
+    public static ADTree fromJson(String jsonFilePath) throws IOException {
+        String jsonContent = new String(Files.readAllBytes(Paths.get(jsonFilePath)));
+
+        // Parse the JSON content into a Map using Gson
+        Gson gson = new Gson();
+        Map<String, Object> json = gson.fromJson(jsonContent, Map.class);
+
+        return ADTree.fromJson(json);
     }
 }

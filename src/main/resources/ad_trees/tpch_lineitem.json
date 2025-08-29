@@ -1,0 +1,1 @@
+{"num_dimensions":5,"possible_values":[["FOB","SHIP","AIR","RAIL","MAIL","TRUCK","REG AIR"],["A","N","R"],["O","F"],[0.0,0.09,0.1,0.07,0.06,0.03,0.08,0.05,0.01,0.04,0.02],[0.0,0.05,0.06,0.07,0.08,0.03,0.01,0.04,0.02]],"names":["c_shipmode","c_returnflag","c_linestatus","c_discount","c_tax"],"collapsed":true}

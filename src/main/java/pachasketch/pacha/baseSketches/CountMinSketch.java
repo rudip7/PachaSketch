@@ -31,7 +31,7 @@ public class CountMinSketch {
         }
     }
 
-    public static CountMinSketch buildFromGuarantees(float epsilon, float delta) {
+    public static CountMinSketch buildFromGuarantees(double epsilon, double delta) {
         // Calculate width and depth based on epsilon and delta
         int width = (int) Math.ceil(Math.E / epsilon);
         int depth = (int) Math.ceil(Math.log(1 / delta));
