@@ -52,8 +52,10 @@ class ADTreeTest {
         ADTree adTree = new ADTree();
         adTree.addDimension(new HashSet<>(Arrays.asList("A", "B", "C")), "Attribute1");
         adTree.addDimension(new HashSet<>(Arrays.asList("X", "Y")), "Attribute2");
-        Map<String, Object> json = adTree.toJson();
-        assertEquals(2, json.get("num_dimensions"));
+        String jsonString = adTree.toJson();
+        Gson gson = new Gson();
+        Map<String, Object> json = gson.fromJson(jsonString, Map.class);
+        assertEquals(2.0, json.get("num_dimensions"));
         assertEquals(Arrays.asList(Arrays.asList("A", "B", "C"), Arrays.asList("X", "Y")), json.get("possible_values"));
         assertEquals(Arrays.asList("Attribute1", "Attribute2"), json.get("names"));
         assertFalse((Boolean) json.get("collapsed"));
@@ -150,19 +152,18 @@ class ADTreeTest {
         String jsonFilePath = "src/main/resources/ad_trees/online_retail.json";
         String jsonContent = new String(Files.readAllBytes(Paths.get(jsonFilePath)));
 
-        // Parse the JSON content into a Map using Gson
-        Gson gson = new Gson();
-        Map<String, Object> json = gson.fromJson(jsonContent, Map.class);
-
         // Create the ADTree from the JSON
-        ADTree adTree = ADTree.fromJson(json);
+        ADTree adTree = ADTree.fromJson(jsonContent);
 
         // Validate the ADTree structure
         assertEquals(3, adTree.getNumDimensions());
         assertEquals(Set.of("category", "region", "gender"), Set.copyOf(adTree.attributeNames));
         assertFalse(adTree.isCollapsed());
+        String jsonString = adTree.toJson();
+        Gson gson = new Gson();
+        Map<String, Object> json = gson.fromJson(jsonString, Map.class);
 
-        List<List<String>> possibleValues = (List<List<String>>) adTree.toJson().get("possible_values");
+        List<List<String>> possibleValues = (List<List<String>>) json.get("possible_values");
         assertEquals(3, possibleValues.size());
         assertTrue(possibleValues.get(0).contains("842"));
         assertTrue(possibleValues.get(1).contains("Italy"));
@@ -175,19 +176,19 @@ class ADTreeTest {
         String jsonFilePath = "src/main/resources/ad_trees/tpch_lineitem.json";
         String jsonContent = new String(Files.readAllBytes(Paths.get(jsonFilePath)));
 
-        // Parse the JSON content into a Map using Gson
-        Gson gson = new Gson();
-        Map<String, Object> json = gson.fromJson(jsonContent, Map.class);
-
         // Create the ADTree from the JSON
-        ADTree adTree = ADTree.fromJson(json);
+        ADTree adTree = ADTree.fromJson(jsonContent);
 
         // Validate the ADTree structure
         assertEquals(5, adTree.getNumDimensions());
         assertEquals(Set.of("c_shipmode", "c_returnflag", "c_linestatus", "c_discount", "c_tax"), Set.copyOf(adTree.attributeNames));
         assertTrue(adTree.isCollapsed());
 
-        List<List<String>> possibleValues = (List<List<String>>) adTree.toJson().get("possible_values");
+        String jsonString = adTree.toJson();
+        Gson gson = new Gson();
+        Map<String, Object> json = gson.fromJson(jsonString, Map.class);
+
+        List<List<String>> possibleValues = (List<List<String>>) json.get("possible_values");
         assertEquals(5, possibleValues.size());
         assertTrue(possibleValues.get(0).contains("FOB"));
         assertTrue(possibleValues.get(1).contains("A"));
@@ -195,4 +196,18 @@ class ADTreeTest {
         assertTrue(possibleValues.get(3).contains("0.05"));
         assertTrue(possibleValues.get(4).contains("0.06"));
     }
+
+    @Test
+    void toJsonAndFromJsonAreConsistent() {
+        ADTree adTree = new ADTree();
+        adTree.addDimension(new HashSet<>(Arrays.asList("A", "B", "C")), "Attribute1");
+        adTree.addDimension(new HashSet<>(Arrays.asList("X", "Y")), "Attribute2");
+        adTree.collapseLastDimension();
+
+        String jsonString = adTree.toJson();
+        ADTree restoredAdTree = ADTree.fromJson(jsonString);
+
+        assertEquals(adTree, restoredAdTree);
+    }
+
 }

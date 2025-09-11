@@ -6,6 +6,7 @@ import com.google.gson.Gson;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class CountMinSketch {
@@ -110,6 +111,27 @@ public class CountMinSketch {
             }
         }
     }
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        CountMinSketch other = (CountMinSketch) obj;
+        if (this.width != other.width || this.depth != other.depth) {
+            return false;
+        }
+        if (this.processedElements != other.processedElements) {
+            return false;
+        }
+        if (!java.util.Arrays.equals(this.seeds, other.seeds)) {
+            return false;
+        }
+        return Arrays.deepEquals(this.counters, other.counters);
+    }
+
 
     public String toJson() {
         Gson gson = new Gson();

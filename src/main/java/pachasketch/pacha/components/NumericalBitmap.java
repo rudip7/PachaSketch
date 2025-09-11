@@ -5,6 +5,7 @@ import com.google.gson.Gson;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
+import java.util.Objects;
 
 public class NumericalBitmap {
     private final int base;
@@ -306,5 +307,23 @@ public class NumericalBitmap {
 
     public int getExponent() {
         return exponent;
+    }
+
+    public int getBase() {
+        return base;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        NumericalBitmap that = (NumericalBitmap) obj;
+        return base == that.base &&
+               exponent == that.exponent &&
+               bucketSize == that.bucketSize &&
+               sizePerSide == that.sizePerSide &&
+               limit == that.limit &&
+               Objects.equals(positiveBitmap, that.positiveBitmap) &&
+               Objects.equals(negativeBitmap, that.negativeBitmap);
     }
 }

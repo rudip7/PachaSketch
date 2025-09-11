@@ -1,6 +1,7 @@
 package pachasketch.pacha.components;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -145,16 +146,36 @@ public class ADTree {
         return this.collapsed;
     }
 
-    public Map<String, Object> toJson() {
-        Map<String, Object> json = new HashMap<>();
-        json.put("num_dimensions", this.numDimensions);
-        json.put("possible_values", this.possibleValues.stream().map(ArrayList::new).collect(Collectors.toList()));
-        json.put("names", this.attributeNames);
-        json.put("collapsed", this.collapsed);
-        return json;
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        ADTree adTree = (ADTree) obj;
+        return numDimensions == adTree.numDimensions &&
+               collapsed == adTree.collapsed &&
+               Objects.equals(possibleValues, adTree.possibleValues) &&
+               Objects.equals(attributeNames, adTree.attributeNames);
     }
 
-    public static ADTree fromJson(Map<String, Object> json) {
+    public String toJson() {
+        Gson gson = new Gson();
+        JsonObject jsonObject = new JsonObject();
+
+        jsonObject.addProperty("num_dimensions", this.numDimensions);
+        jsonObject.add("possible_values", gson.toJsonTree(this.possibleValues.stream().map(ArrayList::new).collect(Collectors.toList())));
+        jsonObject.add("names", gson.toJsonTree(this.attributeNames));
+        jsonObject.add("collapsed", gson.toJsonTree(this.collapsed));
+        return gson.toJson(jsonObject);
+    }
+
+    public static ADTree fromJson(String jsonString) {
+        Gson gson = new Gson();
+        Map<String, Object> json = gson.fromJson(jsonString, Map.class);
+
         ADTree adTree = new ADTree();
         adTree.numDimensions = ((Double) json.get("num_dimensions")).intValue();
         adTree.possibleValues = ((List<?>) json.get("possible_values"))
@@ -168,13 +189,8 @@ public class ADTree {
         return adTree;
     }
 
-    public static ADTree fromJson(String jsonFilePath) throws IOException {
+    public static ADTree fromFile(String jsonFilePath) throws IOException {
         String jsonContent = new String(Files.readAllBytes(Paths.get(jsonFilePath)));
-
-        // Parse the JSON content into a Map using Gson
-        Gson gson = new Gson();
-        Map<String, Object> json = gson.fromJson(jsonContent, Map.class);
-
-        return ADTree.fromJson(json);
+        return ADTree.fromJson(jsonContent);
     }
 }

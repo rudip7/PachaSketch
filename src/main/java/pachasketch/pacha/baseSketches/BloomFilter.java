@@ -39,6 +39,27 @@ public class BloomFilter implements Filter{
         return new BloomFilter(numHashFunctions, size);
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        BloomFilter other = (BloomFilter) obj;
+        if (this.size != other.size || this.numHashFunctions != other.numHashFunctions) {
+            return false;
+        }
+        if (this.processedElements != other.processedElements) {
+            return false;
+        }
+        if (!java.util.Arrays.equals(this.seeds, other.seeds)) {
+            return false;
+        }
+        return java.util.Arrays.equals(this.bitArray, other.bitArray);
+    }
+
     private int[] hash(String element){
         int[] indices = new int[numHashFunctions];
         for (int i = 0; i < numHashFunctions; i++) {
@@ -132,7 +153,7 @@ public class BloomFilter implements Filter{
         return gson.toJson(this);
     }
 
-    public static Filter fromJson(String json) {
+    public static BloomFilter fromJson(String json) {
         Gson gson = new Gson();
         BloomFilter bloomFilter = gson.fromJson(json, BloomFilter.class);
 

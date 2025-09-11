@@ -13,13 +13,13 @@ class MaterializedCombinationsTest {
     @Test
     void fromJsonCreatesCorrectInstance() {
         Map<String, Object> json = new HashMap<>();
-        json.put("col_names", Arrays.asList("A", "B", "C"));
+        json.put("attribute_names", Arrays.asList("A", "B", "C"));
         json.put("relevant_combinations", Arrays.asList(
             Arrays.asList("A", "B"),
             Arrays.asList("B", "C")
         ));
 
-        MaterializedCombinations result = MaterializedCombinations.fromJson(json);
+        MaterializedCombinations result = MaterializedCombinations.fromJson(json.toString());
 
         assertEquals(Arrays.asList("A", "B", "C"), result.toJson().get("col_names"));
         assertEquals(Arrays.asList(
@@ -118,7 +118,7 @@ class MaterializedCombinationsTest {
         String jsonFilePath = "src/main/resources/relevantCombinations/tpch_lineitem.json";
 
         // Create MaterializedCombinations from the JSON file
-        MaterializedCombinations result = MaterializedCombinations.fromJson(jsonFilePath);
+        MaterializedCombinations result = MaterializedCombinations.fromFile(jsonFilePath);
 
         // Validate the instance
         assertEquals(Arrays.asList("n_shipdate", "n_commitdate", "n_receiptdate", "n_extendedprice", "n_quantity"), result.getAttributeNames());

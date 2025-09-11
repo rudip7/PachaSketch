@@ -44,6 +44,9 @@ public class MaterializedCombinations {
     }
 
     public boolean[] findBestMatch(List<Integer> numPredicates) {
+        if (numPredicates.isEmpty()) {
+            return new boolean[attributeNames.size()];
+        }
         int[] mask = new int[attributeNames.size()];
         for (int index : numPredicates) {
             mask[index] = 1;
@@ -108,7 +111,7 @@ public class MaterializedCombinations {
 
     public Map<String, Object> toJson() {
         Map<String, Object> json = new HashMap<>();
-        json.put("col_names", attributeNames);
+        json.put("attribute_names", attributeNames);
         json.put("relevant_combinations", relevantCombinations);
         return json;
     }
@@ -124,7 +127,11 @@ public class MaterializedCombinations {
                 Arrays.deepEquals(invertedBits, that.invertedBits);
     }
 
-    public static MaterializedCombinations fromJson(Map<String, Object> json) {
+    public static MaterializedCombinations fromJson(String jsonContent) {
+        // Parse the JSON content into a Map using Gson
+        Gson gson = new Gson();
+        Map<String, Object> json = gson.fromJson(jsonContent, Map.class);
+
         List<String> colNames = (List<String>) json.get("attribute_names");
         List<List<String>> relevantCombinations = (List<List<String>>) json.get("relevant_combinations");
         return new MaterializedCombinations(colNames, relevantCombinations);
@@ -179,13 +186,10 @@ public class MaterializedCombinations {
         return relevantCombinations.size();
     }
 
-    public static MaterializedCombinations fromJson(String jsonFilePath) throws IOException {
+    public static MaterializedCombinations fromFile(String jsonFilePath) throws IOException {
         String jsonContent = new String(Files.readAllBytes(Paths.get(jsonFilePath)));
-
-        // Parse the JSON content into a Map using Gson
-        Gson gson = new Gson();
-        Map<String, Object> json = gson.fromJson(jsonContent, Map.class);
-
-        return MaterializedCombinations.fromJson(json);
+        return MaterializedCombinations.fromJson(jsonContent);
     }
+
+
 }

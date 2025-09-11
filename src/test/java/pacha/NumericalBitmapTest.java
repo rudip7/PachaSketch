@@ -243,4 +243,35 @@ class NumericalBitmapTest {
         int[] bAdicIndices = {2, -3, 5};
         assertThrows(IllegalArgumentException.class, () -> bitmap.pruneBAdicIndices(1, bAdicIndices));
     }
+
+    @Test
+    void toJsonPreservesAllFields() {
+        NumericalBitmap bitmap = new NumericalBitmap(10, 100);
+        bitmap.update(25);
+        bitmap.update(-25);
+
+        String json = bitmap.toJson();
+        assertTrue(json.contains("\"base\":10"));
+        assertTrue(json.contains("\"exponent\":0"));
+        assertTrue(json.contains("\"bucketSize\":1"));
+        assertTrue(json.contains("\"sizePerSide\":100"));
+        assertTrue(json.contains("\"limit\":100"));
+    }
+
+    @Test
+    void fromJsonRestoresAllFields() {
+        NumericalBitmap bitmap = new NumericalBitmap(10, 100);
+        bitmap.update(25);
+        bitmap.update(-25);
+
+        String json = bitmap.toJson();
+        NumericalBitmap restoredBitmap = NumericalBitmap.fromJson(json);
+
+        assertEquals(bitmap, restoredBitmap);
+
+        assertEquals(10, restoredBitmap.getBase());
+        assertTrue(restoredBitmap.query(25));
+        assertFalse(bitmap.query(10));
+        assertTrue(restoredBitmap.query(-25));
+    }
 }

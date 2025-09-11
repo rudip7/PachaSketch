@@ -370,4 +370,13 @@ public class PachaSketchTest {
         assertEquals(4, result.estimate());
     }
 
+    @Test
+    void toJsonAndFromJsonAreConsistent() {
+        PachaSketch sketch = buildSketchToTest();
+        String json = sketch.toJson();
+        PachaSketch restoredSketch = PachaSketch.fromJson(json);
+
+        assertEquals(sketch, restoredSketch);
+    }
+
 }

@@ -1,4 +1,5 @@
 src/main/resources/data/
+src/main/resources/sketches/
 target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/

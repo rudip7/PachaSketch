@@ -13,10 +13,13 @@ public class HashBenchmark {
     static final int SEED = 0x9747b28c;
     static final int MODULO_LIMIT = 100000; // e.g., hash buckets
 
+    static Random rn = new Random();
+
     public static void main(String[] args) {
         List<String> testData = generateTestStrings(NUM_ITEMS);
 
         testAndReport("String.hashCode() ^ seed", testData, HashBenchmark::basicHash);
+        testAndReport("Random-based Hash", testData, HashBenchmark::randomHash);
         testAndReport("Guava MurmurHash3", testData, HashBenchmark::guavaMurmurHash);
         testAndReport("XXHash (lz4-java)", testData, HashBenchmark::xxHash32);
     }
@@ -52,6 +55,11 @@ public class HashBenchmark {
 
     static int basicHash(String input) {
         return input.hashCode() ^ SEED;
+    }
+
+    static int randomHash(String input) {
+        rn.setSeed(input.hashCode());
+        return rn.nextInt();
     }
 
     static int guavaMurmurHash(String input) {
