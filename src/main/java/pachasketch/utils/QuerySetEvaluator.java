@@ -1,5 +1,6 @@
 package pachasketch.utils;
 
+import pachasketch.omni.OmniSketch;
 import pachasketch.pacha.PachaSketch;
 import pachasketch.pacha.utils.QueryResult;
 import pachasketch.pacha.utils.QueryStats;
@@ -22,7 +23,9 @@ public class QuerySetEvaluator {
                 QueryResult result = pachaSketch.query(query, true, false);
                 results.add(result);
             } catch (Exception e) {
-                throw new RuntimeException("Error processing query at index " + queryIndex + ": " + query, e);
+                String[] split = querySetFile.split("/");
+                String querySetName = split[split.length - 1];
+                throw new RuntimeException("Error processing query at index " + queryIndex + " from set "+querySetName+" : " + query, e);
             }
             queryIndex++;
         }
@@ -73,6 +76,47 @@ public class QuerySetEvaluator {
                     row.append("0,0,0,0,0,0,0,0,0,0,0,0");
                 }
 
+                // Write the row to the file
+                writer.write(row.toString() + "\n");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to write results to file: " + resultFile, e);
+        }
+    }
+
+    public static void evaluateQuerySet(OmniSketch omniSketch, String querySetFile, String resultFile) throws IOException {
+        List<List<Object>> queries = QueryFactory.fromJSON(querySetFile);
+        List<Integer> results = new ArrayList<>(queries.size());
+        int queryIndex = 0;
+        for(List<Object> query : queries){
+            try {
+                int estimate = omniSketch.query(query);
+                results.add(estimate);
+            } catch (Exception e) {
+                String[] split = querySetFile.split("/");
+                String querySetName = split[split.length - 1];
+                throw new RuntimeException("Error processing query at index " + queryIndex + " from set "+querySetName+" : " + query, e);
+            }
+            queryIndex++;
+        }
+
+        writeOmniResultsToFile(results, resultFile);
+    }
+
+    private static void writeOmniResultsToFile(List<Integer> results, String resultFile) throws IOException {
+        String header = "estimates";
+        createDirectories(Paths.get(resultFile).getParent());
+        try (FileWriter writer = new FileWriter(resultFile)) {
+            // Write the header
+            writer.write(header + "\n");
+
+            // Write each QueryResult as a row
+            for (Integer result : results) {
+                StringBuilder row = new StringBuilder();
+
+                // Add estimate
+                row.append(result.toString());
                 // Write the row to the file
                 writer.write(row.toString() + "\n");
             }

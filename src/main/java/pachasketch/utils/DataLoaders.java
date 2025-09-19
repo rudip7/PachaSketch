@@ -76,10 +76,11 @@ public class DataLoaders {
             int currentIndex = 0;
             int recordCount = 0;
             long totalUpdateTime = 0;
-
+            int batchCount = 1;
             while ((line = br.readLine()) != null) {
                 currentBatch[currentIndex++] = line.split(",");
                 if (currentIndex == batchSize) {
+                    System.out.println("Processing batch "+ batchCount+": " + currentIndex);
                     long startTime = System.nanoTime(); // Start timing
                     for (int i = 0; i < currentIndex; i++) {
                         omniSketch.add(recordCount + i, currentBatch[i]);
@@ -88,6 +89,7 @@ public class DataLoaders {
 
                     recordCount += currentIndex;
                     currentIndex = 0; // Reset index for the next batch
+                    batchCount++;
                 }
             }
 

@@ -43,6 +43,17 @@ public class MaterializedCombinations {
         return new MaterializedCombinations(attributeNames, allCombinations);
     }
 
+    /**
+     * Finds the best matching combination based on the given list of predicate indices.
+     * The method identifies rows in the `bits` array that match the specified predicates
+     * and selects the row with the minimum number of `1`s. If multiple rows have the same
+     * minimum number of `1`s, the first one is picked.
+     *
+     * @param numPredicates A list of indices representing the predicates to match.
+     *                      Each index corresponds to an attribute in `attributeNames`.
+     * @return A boolean array representing the best matching combination. If no match
+     *         is found, an empty boolean array is returned.
+     */
     public boolean[] findBestMatch(List<Integer> numPredicates) {
         if (numPredicates.isEmpty()) {
             return new boolean[attributeNames.size()];

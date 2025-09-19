@@ -17,8 +17,8 @@ public class OmniSketch{
 
     public int width;
     public int depth;
-    CountMin[] cmSketches;
-    CountMinDyad[][] cmSketchesRange;
+    public CountMin[] cmSketches;
+    public CountMinDyad[][] cmSketchesRange;
 
     public OmniSketch(int[] catColMap, int[] numColMap, double delta, double eps, int maxSize,
                       int dyadicRangeBits) {
@@ -220,8 +220,9 @@ public class OmniSketch{
                 B_virtual = rangesList.size() * maxSize;
             }
             for (int j = 0; j < rangesList.size(); j++) {
-                CountMinDyad cm = cmSketchesRange[attr][getIndexOfRange(rangesList.get(j))];
-                TreeSet<Long>[] rangeSet = cm.rangeQuery(rangesList.get(j)[0], rangesList.get(j)[1], ns[attr]);
+                int indexOfRange = (dyadicRangeBits-1) - getIndexOfRange(rangesList.get(j)) ;
+                CountMinDyad cm = cmSketchesRange[attr][indexOfRange];
+                TreeSet<Long>[] rangeSet = cm.rangeQuery(rangesList.get(j)[0], rangesList.get(j)[1], ns[catColMap.length + attr]);
                 for (int d = 0; d < depth; d++) {
                     if (set[d] == null) {
                         set[d] = rangeSet[d];

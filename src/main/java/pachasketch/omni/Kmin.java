@@ -12,7 +12,7 @@ public class Kmin{
     public int curSampleSize;
     double delta;
     Random rn = new Random();
-    long maxHash;
+    public long maxHash;
     long curTreeRoot = Long.MAX_VALUE;
 
 

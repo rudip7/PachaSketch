@@ -1,5 +1,6 @@
 package pachasketch.utils;
 
+import pachasketch.omni.DetermineB;
 import pachasketch.omni.OmniSketch;
 
 import java.util.List;
@@ -12,7 +13,7 @@ public class OmniSketchFactory {
 
         while (left <= right) {
             int B = (left + right) / 2;
-            int ceilLog = (int) Math.ceil(Math.log(4 * Math.pow(B, 2.5) / delta) / Math.log(2));
+            int ceilLog = (int) Math.ceil(Math.log(4 * Math.pow(B, 2.5) / delta));
             long rhs = factor * (32L + B * ceilLog + 3 * 32 + 1);
 
             if (rhs <= memBudget) {
@@ -39,7 +40,9 @@ public class OmniSketchFactory {
         int nNum = numColMap.length;
 
         // Compute the maximum sample size
-        int maxSampleSize = computeMaxB(memBudgetBits, w, d, nCat, nNum, dyadicRangeBits, delta);
+//        int maxSampleSize = computeMaxB(memBudgetBits, w, d, nCat, nNum, dyadicRangeBits, delta);
+        DetermineB sampleSizeCalculator = new DetermineB(memBudgetBits);
+        int maxSampleSize = sampleSizeCalculator.determineB(d, w, delta, nCat, nNum, dyadicRangeBits);
 
         // Return a new OmniSketch object
         return new OmniSketch(catColMap, numColMap, delta, eps, maxSampleSize, dyadicRangeBits);

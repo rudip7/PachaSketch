@@ -239,7 +239,7 @@ public class PachaSketch {
             partialNCubes += product;
 
             // Check if we need to reduce levels
-            if (partialNCubes > maxNCubes) {
+            if (partialNCubes > maxNCubes || partialNCubes < 0) { // Handle potential overflow
                 if (reducedToLevel == -1) {
                     reducedToLevel = calculateMedianLevel(minimalBAdicCovers);
                 } else if (reducedToLevel < this.levels - 2) {
@@ -260,6 +260,7 @@ public class PachaSketch {
         }
 
         // Combine results
+        // TODO: When all regions are pruned by the bitmap then return null
         int[][] result = new int[levels.size()][indices.get(0).length + 1];
         for (int i = 0; i < levels.size(); i++) {
             result[i][0] = levels.get(i);
@@ -340,6 +341,10 @@ public class PachaSketch {
             double scale = Math.pow(coverBases[i], targetLevel);
             int indexLow = (int) Math.round(numPredicates[i][0] / scale);
             int indexHigh = (int) Math.round(numPredicates[i][1] / scale);
+            if (indexLow == indexHigh) {
+                indexLow = (int) Math.floor(numPredicates[i][0] / scale);
+                indexHigh = (int) Math.ceil(numPredicates[i][1] / scale);
+            }
             aligned[i][0] = (int) (indexLow * scale);
             aligned[i][1] = (int) (indexHigh * scale - 1);
         }
@@ -420,9 +425,11 @@ public class PachaSketch {
 
         // Get numerical regions based on the minimal b-adic spatial cover
         boolean[] dimIndices = materialized.findBestMatch(numDimensions);
+        numDimensions.clear();
         int dimCount = 0;
-        for (boolean dimIndex : dimIndices) {
-            if (dimIndex) {
+        for (int i = 0; i < dimIndices.length; i++) {
+            if (dimIndices[i]) {
+                numDimensions.add(i);
                 dimCount++;
             }
         }
@@ -430,6 +437,7 @@ public class PachaSketch {
         if (numDimensions.isEmpty()){
             bAdicCubes = new int[][]{{levels - 1}};
         } else {
+
             int[][] matSpaceNumPredicates = new int[dimCount][2];
             int index = 0;
             for (int i = 0; i < numPredicates.size(); i++) {
