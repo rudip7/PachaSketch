@@ -2,17 +2,17 @@ package pachasketch.pacha;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonWriter;
 import pachasketch.pacha.baseSketches.BloomFilter;
 import pachasketch.pacha.baseSketches.CountMinSketch;
+import pachasketch.pacha.baseSketches.Filter;
 import pachasketch.pacha.components.ADTree;
 import pachasketch.pacha.components.MaterializedCombinations;
 import pachasketch.pacha.components.NumericalBitmap;
 import pachasketch.pacha.utils.BAdicUtils;
 import pachasketch.pacha.utils.QueryStats;
-import pachasketch.pacha.utils.QueryResult;
+import pachasketch.pacha.utils.PachaQueryResult;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -32,10 +32,12 @@ public class PachaSketch {
     private int[] maxValues;
     private int[] minValues;
     private int processedElements;
-    public BloomFilter catIndex;
+    public Filter catIndex;
     public BloomFilter numIndex;
     public BloomFilter regionIndex;
     public CountMinSketch[] baseSketches;
+
+    public int forcedAlignment = -1; // -1 means no forced alignment
 
     private int maxNCubes = 1_000_000; // Default value, can be adjusted based on requirements
 
@@ -242,12 +244,14 @@ public class PachaSketch {
             if (partialNCubes > maxNCubes || partialNCubes < 0) { // Handle potential overflow
                 if (reducedToLevel == -1) {
                     reducedToLevel = calculateMedianLevel(minimalBAdicCovers);
-                } else if (reducedToLevel < this.levels - 2) {
+//                    reducedToLevel = calculateNewAlignedLevel(minimalBAdicCovers);
+                } else if (reducedToLevel < this.levels - 1) {
                     reducedToLevel++;
                 } else {
                     // TODO: Use this output as it returned all wildcards at max level
                     return null;
                 }
+                forcedAlignment = reducedToLevel;
                 return minimalSpatialBAdicCover(numDimensions, alignNumPredicates(numPredicates, coverBases, reducedToLevel), reducedToLevel);
             }
 
@@ -325,6 +329,20 @@ public class PachaSketch {
         return maxLevels.get(middle);
     }
 
+    private int calculateNewAlignedLevel(List<List<int[]>> minimalBAdicCovers) {
+        int minLevel = Integer.MAX_VALUE;
+        for (List<int[]> cover : minimalBAdicCovers) {
+            int coverMinLevel = cover.stream()
+                    .mapToInt(arr -> arr[0])
+                    .min()
+                    .orElse(0);
+            if (coverMinLevel < minLevel) {
+                minLevel = coverMinLevel;
+            }
+        }
+        return minLevel+1;
+    }
+
 //    private int[][] alignNumPredicates(int[][] numPredicates, int[] coverBases, int targetLevel) {
 //        int[][] aligned = new int[numPredicates.length][2];
 //        for (int i = 0; i < numPredicates.length; i++) {
@@ -377,10 +395,11 @@ public class PachaSketch {
         return result;
     }
 
-    public QueryResult getSubQueries(List<Object> query, boolean detailed, boolean debug) {
+    public PachaQueryResult getSubQueries(List<Object> query, boolean detailed, boolean debug) {
         if (query.size() != numDimensions) {
             throw new IllegalArgumentException("Query must have the same number of dimensions as the sketch. Expected: " + numDimensions + ", got: " + query.size());
         }
+        forcedAlignment = -1; // Reset forced alignment for each query
 
         // Process categorical predicates
         List<Set<String>> catPredicates = new ArrayList<>(catColMap.length);
@@ -524,17 +543,17 @@ public class PachaSketch {
                     debug);
         }
 
-        return new QueryResult(
+        return new PachaQueryResult(
                 queryRegions,
                 detailed ? stats : null,
-                -1);
+                forcedAlignment);
     }
 
     public int query(List<Object> query){
         return query(query, false, false).estimate();
     }
 
-    public QueryResult query(List<Object> query, boolean detailed, boolean debug){
+    public PachaQueryResult query(List<Object> query, boolean detailed, boolean debug){
         if (query.size() != numDimensions) {
             throw new IllegalArgumentException("Query must have the same number of dimensions as the sketch. Expected: " + numDimensions + ", got: " + query.size());
         }
@@ -546,12 +565,12 @@ public class PachaSketch {
             }
         }
         if (allWildcards) {
-            return new QueryResult(processedElements);
+            return new PachaQueryResult(processedElements);
         }
 
-        QueryResult queryResult = getSubQueries(query, detailed, debug);
+        PachaQueryResult queryResult = getSubQueries(query, detailed, debug);
         if (queryResult == null) {
-            return new QueryResult(0); // No valid regions found
+            return new PachaQueryResult(0); // No valid regions found
         }
 
         int estimate = 0;
@@ -583,6 +602,20 @@ public class PachaSketch {
             result.put(level, combinedRegions);
         }
         return result;
+    }
+
+    public double getSizeInMB(){
+        double size = 0.0;
+        for (NumericalBitmap bitmap : numericalBitmaps) {
+            size += bitmap.getSizeInMB();
+        }
+        size += catIndex.getSizeInMB();
+        size += numIndex.getSizeInMB();
+        size += regionIndex.getSizeInMB();
+        for (CountMinSketch cms : baseSketches) {
+            size += cms.getSizeInMB();
+        }
+        return size;
     }
 
     public int getLevels() {

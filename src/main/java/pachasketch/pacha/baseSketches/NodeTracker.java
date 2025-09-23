@@ -9,9 +9,11 @@ import java.util.List;
 
 public class NodeTracker implements Filter {
     private final HashSet<String> elements;
+    private final int maxElements;
 
-    public NodeTracker() {
+    public NodeTracker(int maxElements) {
         this.elements = new HashSet<>();
+        this.maxElements = maxElements;
     }
 
     @Override
@@ -57,12 +59,17 @@ public class NodeTracker implements Filter {
 
     public static NodeTracker fromJson(String json) {
         Gson gson = new Gson();
-        NodeTracker tracker = new NodeTracker();
+        NodeTracker tracker = new NodeTracker(0);
         String[] elements = gson.fromJson(json, String[].class);
         for (String element : elements) {
             tracker.update(element);
         }
         return tracker;
+    }
+
+    public double getSizeInMB(){
+        int byteSize = (int) Math.ceil(maxElements / 8.0);
+        return byteSize / (1024.0 * 1024.0);
     }
 
     @Override

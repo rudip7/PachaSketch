@@ -276,22 +276,9 @@ public class NumericalBitmap {
         this.negativeBitmap.set(0, this.sizePerSide);
     }
 
-    public double getSize(String unit) {
+    public double getSizeInMB() {
         double nBytes = Math.ceil((double) this.sizePerSide * 2 / 8.0);
-        switch (unit) {
-            case "MB":
-                return nBytes / (1024 * 1024);
-            case "KB":
-                return nBytes / 1024;
-            case "B":
-                return nBytes;
-            default:
-                throw new IllegalArgumentException("Unit must be 'MB', 'KB', or 'B'.");
-        }
-    }
-
-    public double getSize() {
-        return getSize("MB");
+        return nBytes / (1024 * 1024);
     }
 
 

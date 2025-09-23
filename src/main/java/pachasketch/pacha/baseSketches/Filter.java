@@ -16,4 +16,5 @@ public interface Filter {
     void merge(Filter other);
 
     String toJson();
+    double getSizeInMB();
 }

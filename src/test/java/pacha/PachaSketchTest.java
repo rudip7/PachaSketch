@@ -5,7 +5,7 @@ import pachasketch.pacha.PachaSketch;
 import pachasketch.utils.PachaSketchFactory;
 import pachasketch.pacha.components.ADTree;
 import pachasketch.pacha.components.MaterializedCombinations;
-import pachasketch.pacha.utils.QueryResult;
+import pachasketch.pacha.utils.PachaQueryResult;
 import pachasketch.pacha.utils.QueryStats;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -133,7 +133,6 @@ public class PachaSketchTest {
 
         assertEquals(1, sketch.getProcessedElements());
 
-        assertEquals(4, sketch.catIndex.getProcessedElements());
         assertTrue(sketch.catIndex.query("*, *, *"));
         assertTrue(sketch.catIndex.query("a1, *, *"));
         assertTrue(sketch.catIndex.query("a1, b1, *"));
@@ -313,7 +312,7 @@ public class PachaSketchTest {
             new int[]{20, 20}
         );
 
-        QueryResult result = sketch.query(query, true, true);
+        PachaQueryResult result = sketch.query(query, true, true);
 
         QueryStats stats = result.stats();
 
@@ -339,7 +338,7 @@ public class PachaSketchTest {
             "*"
         );
 
-        QueryResult result = sketch.query(query, true, true);
+        PachaQueryResult result = sketch.query(query, true, true);
 
         assertEquals(10, result.estimate());
     }
@@ -356,7 +355,7 @@ public class PachaSketchTest {
                 new int[]{20, 20}
         );
 
-        QueryResult result = sketch.query(query, true, true);
+        PachaQueryResult result = sketch.query(query, true, true);
 
         QueryStats stats = result.stats();
 

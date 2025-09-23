@@ -1,7 +1,8 @@
 package pachasketch.omni;
 
+import pachasketch.omni.utils.OmniQueryResult;
+
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class OmniSketch{
 
@@ -130,7 +131,7 @@ public class OmniSketch{
 
     public int withinConstraint= 0;
     public int outsideConstraint = 0;
-    public int query(List<Object> query) {
+    public OmniQueryResult query(List<Object> query) {
         if (query.size() != numAttributes) {
             throw new IllegalArgumentException("Query must have the same number of dimensions as the sketch. Expected: " + numAttributes + ", got: " + query.size());
         }
@@ -188,14 +189,17 @@ public class OmniSketch{
 
 
         int[][] ns = new int[numAttributes][depth];
+        int[] Bs = new int[numAttributes];
 
         for (int i = 0; i < catPredicates.size(); i++) {
             int attr = catDimensions.get(i);
             TreeSet<Long>[] set = new TreeSet[depth];
             Set<Long> predicate = catPredicates.get(i);
-            if (B_virtual < predicate.size() * maxSize) {
-                B_virtual = predicate.size() * maxSize;
-            }
+//            if (B_virtual < predicate.size() * maxSize) {
+//                B_virtual = predicate.size() * maxSize;
+//            }
+            Bs[attr] = predicate.size() * maxSize;
+//            B_virtual = predicate.size() * maxSize;
             for (Long p : predicate) {
                 Kmin[] temp = cmSketches[attr].query(p);
                 for (int d = 0; d < depth; d++) {
@@ -216,9 +220,11 @@ public class OmniSketch{
             ArrayList<long[]> rangesList = wrapLogRanges(predicate[0], predicate[1]);
 
             TreeSet<Long>[] set = new TreeSet[depth];
-            if (B_virtual < rangesList.size() * maxSize) {
-                B_virtual = rangesList.size() * maxSize;
-            }
+//            if (B_virtual < rangesList.size() * maxSize) {
+//                B_virtual = rangesList.size() * maxSize;
+//            }
+            Bs[catColMap.length + attr] = rangesList.size() * maxSize;
+//            B_virtual = rangesList.size() * maxSize;
             for (int j = 0; j < rangesList.size(); j++) {
                 int indexOfRange = (dyadicRangeBits-1) - getIndexOfRange(rangesList.get(j)) ;
                 CountMinDyad cm = cmSketchesRange[attr][indexOfRange];
@@ -235,17 +241,22 @@ public class OmniSketch{
             System.arraycopy(set, 0, samples, (catPredicates.size()+i) * depth, depth);
         }
 
-        n_max = getNmax(ns);
+//        n_max = getNmax(ns);
+        int[] nMaxIndex = getNMaxIndex(ns);
+        n_max = ns[nMaxIndex[0]][nMaxIndex[1]];
+        B_virtual = Bs[nMaxIndex[0]];
+
         S_cap = getAltEstKMV(samples);
         double constraint = 3 * Math.log((4 * nPredicates * depth * Math.sqrt(B_virtual))
                 / delta)/(eps * eps);
 
-        double case2Estimate = Math.ceil(S_cap * n_max / B_virtual);
         if (S_cap < constraint) {
-            return (int) (Math.ceil(2 * n_max * Math.log((4 * nPredicates * depth *
+            int estimate = (int) (Math.ceil(2 * n_max * Math.log((4 * nPredicates * depth *
                     Math.sqrt(B_virtual)) / delta)/(B_virtual * eps * eps)));
+            return new OmniQueryResult(estimate, 1);
         } else {
-            return (int) Math.ceil(S_cap * n_max / B_virtual);
+            int estimate = (int) Math.ceil(S_cap * n_max / B_virtual);
+            return new OmniQueryResult(estimate, 2);
         }
 
     }
@@ -275,6 +286,22 @@ public class OmniSketch{
 
         }
         return c;
+    }
+
+    private int[] getNMaxIndex(int[][] ns) {
+        int n_max = 0;
+        int maxRow = -1;
+        int maxCol = -1;
+        for (int i = 0; i < ns.length; i++) {
+            for (int j = 0; j < ns[i].length; j++) {
+                if (ns[i][j] > n_max) {
+                    n_max = ns[i][j];
+                    maxRow = i;
+                    maxCol = j;
+                }
+            }
+        }
+        return new int[]{maxRow, maxCol};
     }
 
     private int getNmax(int[][] ns) {

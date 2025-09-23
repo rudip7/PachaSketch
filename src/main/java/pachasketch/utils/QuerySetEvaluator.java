@@ -1,8 +1,9 @@
 package pachasketch.utils;
 
 import pachasketch.omni.OmniSketch;
+import pachasketch.omni.utils.OmniQueryResult;
 import pachasketch.pacha.PachaSketch;
-import pachasketch.pacha.utils.QueryResult;
+import pachasketch.pacha.utils.PachaQueryResult;
 import pachasketch.pacha.utils.QueryStats;
 
 import java.io.FileWriter;
@@ -16,11 +17,14 @@ import static java.nio.file.Files.createDirectories;
 public class QuerySetEvaluator {
     public static void evaluateQuerySet(PachaSketch pachaSketch, String querySetFile, String resultFile) throws IOException {
         List<List<Object>> queries = QueryFactory.fromJSON(querySetFile);
-        List<QueryResult> results = new ArrayList<>(queries.size());
+        List<PachaQueryResult> results = new ArrayList<>(queries.size());
         int queryIndex = 0;
         for(List<Object> query : queries){
             try {
-                QueryResult result = pachaSketch.query(query, true, false);
+                long startTime = System.nanoTime();
+                PachaQueryResult result = pachaSketch.query(query, true, false);
+                long queryTime = System.nanoTime() - startTime;
+                result.setRuntime(queryTime / 1_000_000.0); // Convert to milliseconds
                 results.add(result);
             } catch (Exception e) {
                 String[] split = querySetFile.split("/");
@@ -33,8 +37,8 @@ public class QuerySetEvaluator {
         writePachaResultsToFile(results, resultFile);
     }
 
-    private static void writePachaResultsToFile(List<QueryResult> results, String resultFile) throws IOException {
-        String header = "estimates,relevant_nodes,cat_regions,b_adic_cubes,num_regions,candidate_regions,query_regions";
+    private static void writePachaResultsToFile(List<PachaQueryResult> results, String resultFile) throws IOException {
+        String header = "estimates,runtime,forced,relevant_nodes,cat_regions,b_adic_cubes,num_regions,candidate_regions,query_regions";
         int nLevels = results.get(0).stats().queriesPerLevel().length;
         for (int i = 0; i < nLevels; i++) {
             header += ",level_" + i + "_queries";
@@ -46,11 +50,13 @@ public class QuerySetEvaluator {
             writer.write(header + "\n");
 
             // Write each QueryResult as a row
-            for (QueryResult result : results) {
+            for (PachaQueryResult result : results) {
                 StringBuilder row = new StringBuilder();
 
-                // Add estimate
-                row.append(result.estimate()).append(",");
+                // Add basic fields
+                row.append(result.estimate()).append(",")
+                        .append(result.getRuntime()).append(",")
+                        .append(result.getForcedAlignment()).append(",");
 
                 // Add QueryStats fields
                 QueryStats stats = result.stats();
@@ -87,12 +93,15 @@ public class QuerySetEvaluator {
 
     public static void evaluateQuerySet(OmniSketch omniSketch, String querySetFile, String resultFile) throws IOException {
         List<List<Object>> queries = QueryFactory.fromJSON(querySetFile);
-        List<Integer> results = new ArrayList<>(queries.size());
+        List<OmniQueryResult> results = new ArrayList<>(queries.size());
         int queryIndex = 0;
         for(List<Object> query : queries){
             try {
-                int estimate = omniSketch.query(query);
-                results.add(estimate);
+                long startTime = System.nanoTime();
+                OmniQueryResult result = omniSketch.query(query);
+                long queryTime = System.nanoTime() - startTime;
+                result.setRuntime(queryTime / 1_000_000.0); // Convert to milliseconds
+                results.add(result);
             } catch (Exception e) {
                 String[] split = querySetFile.split("/");
                 String querySetName = split[split.length - 1];
@@ -104,19 +113,21 @@ public class QuerySetEvaluator {
         writeOmniResultsToFile(results, resultFile);
     }
 
-    private static void writeOmniResultsToFile(List<Integer> results, String resultFile) throws IOException {
-        String header = "estimates";
+    private static void writeOmniResultsToFile(List<OmniQueryResult> results, String resultFile) throws IOException {
+        String header = "estimates,runtime,case";
         createDirectories(Paths.get(resultFile).getParent());
         try (FileWriter writer = new FileWriter(resultFile)) {
             // Write the header
             writer.write(header + "\n");
 
             // Write each QueryResult as a row
-            for (Integer result : results) {
+            for (OmniQueryResult result : results) {
                 StringBuilder row = new StringBuilder();
 
                 // Add estimate
-                row.append(result.toString());
+                row.append(result.getEstimate()).append(",")
+                        .append(result.getRuntime()).append(",")
+                        .append(result.getEstimateCase());
                 // Write the row to the file
                 writer.write(row.toString() + "\n");
             }

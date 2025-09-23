@@ -147,6 +147,11 @@ public class BloomFilter implements Filter{
         }
     }
 
+
+    public double getSizeInMB(){
+        int byteSize = (int) Math.ceil(size / 8.0);
+        return byteSize / (1024.0 * 1024.0);
+    }
     @Override
     public String toJson() {
         Gson gson = new Gson();

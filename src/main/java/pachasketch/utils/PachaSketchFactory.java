@@ -37,7 +37,7 @@ public class PachaSketchFactory {
         int numUpdates = materialized.getNumCombinations() * levels + 1;
         int regionUpdates = catUpdates * numUpdates;
 
-        double adjustedEps = eps / regionUpdates;
+        double adjustedEps = eps / (catUpdates * materialized.getNumCombinations());
 
         BloomFilter catIndex = BloomFilter.buildFromGuarantees(falsePositiveRate, nElements * catUpdates);
         BloomFilter numIndex = BloomFilter.buildFromGuarantees(falsePositiveRate, nElements * numUpdates);

@@ -111,6 +111,11 @@ public class CountMinSketch {
             }
         }
     }
+
+    public double getSizeInMB(){
+        int byteSize = 4 * depth * width;
+        return byteSize / (1024.0 * 1024.0);
+    }
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {

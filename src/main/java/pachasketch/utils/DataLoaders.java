@@ -56,7 +56,7 @@ public class DataLoaders {
 
             System.out.println("Processed " + recordCount + " records");
             System.out.println("Total update time: " + (totalUpdateTime / 1_000_000) + " ms");
-            System.out.println("Throughput: " + throughput + " records/second");
+            System.out.println("Throughput: " + throughput + " records/second\n");
             return throughput;
         } catch (IOException e) {
             e.printStackTrace();
@@ -107,7 +107,7 @@ public class DataLoaders {
 
             System.out.println("Processed " + recordCount + " records");
             System.out.println("Total update time: " + (totalUpdateTime / 1_000_000) + " ms");
-            System.out.println("Throughput: " + throughput + " records/second");
+            System.out.println("Throughput: " + throughput + " records/second\n");
             return throughput;
         } catch (IOException e) {
             e.printStackTrace();
