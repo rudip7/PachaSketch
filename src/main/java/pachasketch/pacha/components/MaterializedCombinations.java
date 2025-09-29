@@ -9,9 +9,9 @@ import java.util.*;
 
 public class MaterializedCombinations {
     private final List<String> attributeNames;
-    private final List<List<String>> relevantCombinations;
-    private final int[][] bits;
-    private final int[][] invertedBits;
+    private List<List<String>> relevantCombinations;
+    private int[][] bits;
+    private int[][] invertedBits;
 
     public MaterializedCombinations(List<String> attributeNames, List<List<String>> relevantCombinations) {
         this.attributeNames = attributeNames;
@@ -119,6 +119,7 @@ public class MaterializedCombinations {
         }
         return expanded;
     }
+
 
     public Map<String, Object> toJson() {
         Map<String, Object> json = new HashMap<>();

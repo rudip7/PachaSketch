@@ -1,5 +1,6 @@
 package pachasketch.utils;
 
+import pachasketch.Sketch;
 import pachasketch.omni.OmniSketch;
 import pachasketch.omni.utils.OmniQueryResult;
 import pachasketch.pacha.PachaSketch;
@@ -15,8 +16,34 @@ import java.util.List;
 import static java.nio.file.Files.createDirectories;
 
 public class QuerySetEvaluator {
-    public static void evaluateQuerySet(PachaSketch pachaSketch, String querySetFile, String resultFile) throws IOException {
-        List<List<Object>> queries = QueryFactory.fromJSON(querySetFile);
+
+    public static void evaluateQuerySetFromResource(Sketch pachaSketch, String resourcePath, String resultFile) throws IOException {
+        if (pachaSketch instanceof PachaSketch) {
+            evaluateQuerySetPachaFromResource((PachaSketch) pachaSketch, resourcePath, resultFile);
+        } else if (pachaSketch instanceof OmniSketch) {
+            evaluateQuerySetOmniFromResource((OmniSketch) pachaSketch, resourcePath, resultFile);
+        } else {
+            throw new IllegalArgumentException("Unsupported sketch type: " + pachaSketch.getClass().getName());
+        }
+    }
+
+    public static void evaluateQuerySetPachaFromResource(PachaSketch pachaSketch, String resourcePath, String resultFile) throws IOException {
+        List<List<Object>> queries = QueryFactory.fromResource(resourcePath);
+        String[] split = resourcePath.split("/");
+        String querySetName = split[split.length - 1];
+
+        evaluateQuerySetPacha(pachaSketch, querySetName, queries, resultFile);
+    }
+
+    public static void evaluateQuerySetPachaFromJson(PachaSketch pachaSketch, String querySetFile, String resultFile) throws IOException {
+        List<List<Object>> queries = QueryFactory.fromJson(querySetFile);
+        String[] split = querySetFile.split("/");
+        String querySetName = split[split.length - 1];
+
+        evaluateQuerySetPacha(pachaSketch, querySetName, queries, resultFile);
+    }
+
+    public static void evaluateQuerySetPacha(PachaSketch pachaSketch, String querySetName, List<List<Object>> queries, String resultFile) throws IOException {
         List<PachaQueryResult> results = new ArrayList<>(queries.size());
         int queryIndex = 0;
         for(List<Object> query : queries){
@@ -27,8 +54,6 @@ public class QuerySetEvaluator {
                 result.setRuntime(queryTime / 1_000_000.0); // Convert to milliseconds
                 results.add(result);
             } catch (Exception e) {
-                String[] split = querySetFile.split("/");
-                String querySetName = split[split.length - 1];
                 throw new RuntimeException("Error processing query at index " + queryIndex + " from set "+querySetName+" : " + query, e);
             }
             queryIndex++;
@@ -91,8 +116,23 @@ public class QuerySetEvaluator {
         }
     }
 
-    public static void evaluateQuerySet(OmniSketch omniSketch, String querySetFile, String resultFile) throws IOException {
-        List<List<Object>> queries = QueryFactory.fromJSON(querySetFile);
+    public static void evaluateQuerySetOmniFromResource(OmniSketch omniSketch, String resourcePath, String resultFile) throws IOException {
+        List<List<Object>> queries = QueryFactory.fromResource(resourcePath);
+        String[] split = resourcePath.split("/");
+        String querySetName = split[split.length - 1];
+
+        evaluateQuerySetOmni(omniSketch, queries, querySetName, resultFile);
+    }
+
+    public static void evaluateQuerySetOmniFromJson(OmniSketch omniSketch, String querySetFile, String resultFile) throws IOException {
+        List<List<Object>> queries = QueryFactory.fromJson(querySetFile);
+        String[] split = querySetFile.split("/");
+        String querySetName = split[split.length - 1];
+
+        evaluateQuerySetOmni(omniSketch, queries, querySetName, resultFile);
+    }
+
+    public static void evaluateQuerySetOmni(OmniSketch omniSketch, List<List<Object>> queries, String querySetName, String resultFile) throws IOException {
         List<OmniQueryResult> results = new ArrayList<>(queries.size());
         int queryIndex = 0;
         for(List<Object> query : queries){
@@ -103,8 +143,7 @@ public class QuerySetEvaluator {
                 result.setRuntime(queryTime / 1_000_000.0); // Convert to milliseconds
                 results.add(result);
             } catch (Exception e) {
-                String[] split = querySetFile.split("/");
-                String querySetName = split[split.length - 1];
+
                 throw new RuntimeException("Error processing query at index " + queryIndex + " from set "+querySetName+" : " + query, e);
             }
             queryIndex++;

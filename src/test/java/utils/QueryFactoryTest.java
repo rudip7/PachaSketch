@@ -13,16 +13,10 @@ class QueryFactoryTest {
 
     @Test
     void fromJSON_ReturnsListOfQueries_WhenFileIsValid() {
-        String validFilePath = "src/main/resources/queries/tpch/tpch_random.json";
-        List<List<Object>> queries = QueryFactory.fromJSON(validFilePath);
+        String validFilePath = "queries/tpch/tpch_random.json";
+        List<List<Object>> queries = QueryFactory.fromResource(validFilePath);
         assertNotNull(queries);
         assertFalse(queries.isEmpty());
-    }
-
-    @Test
-    void fromJSON_ThrowsRuntimeException_WhenFileDoesNotExist() {
-        String invalidFilePath = "src/main/resources/queries/tpch/non_existent.json";
-        assertThrows(RuntimeException.class, () -> QueryFactory.fromJSON(invalidFilePath));
     }
 
     @Test

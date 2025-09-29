@@ -1,10 +1,11 @@
 package pachasketch.omni;
 
+import pachasketch.Sketch;
 import pachasketch.omni.utils.OmniQueryResult;
 
 import java.util.*;
 
-public class OmniSketch{
+public class OmniSketch implements Sketch {
 
     public double delta;
     public double eps;
@@ -74,16 +75,33 @@ public class OmniSketch{
 
     private long[][] wrapperInitLogRanges(long l) {
         //l += (long) Math.pow(2, Main.dyadicRangeBits - 1); // shift to positive
+        long[][] ranges;
         if (l < 0) {
-            System.out.println("Error: l < 0");
-            System.exit(1);
-        }
-        long[][] ranges = getLogRanges(l + 1);
-        for (int i = 0; i < ranges[2].length; i++) {
-            ranges[1][i] = ranges[1][i] - 1L ;//- (long) Math.pow(2, Main.dyadicRangeBits - 1);
-            ranges[2][i] = ranges[2][i] - 1L ;//- (long) Math.pow(2, Main.dyadicRangeBits - 1);
+            ranges = getLogRangesNegative(l);
+        } else {
+            ranges = getLogRanges(l + 1);
+            for (int i = 0; i < ranges[2].length; i++) {
+                ranges[1][i] = ranges[1][i] - 1L;//- (long) Math.pow(2, Main.dyadicRangeBits - 1);
+                ranges[2][i] = ranges[2][i] - 1L;//- (long) Math.pow(2, Main.dyadicRangeBits - 1);
+            }
         }
         return ranges;
+    }
+
+    public long[][] getLogRangesNegative(long inputKey) {
+        long[][] logRanges = getLogRanges(-1 * inputKey);
+        for (int i = 0; i < logRanges.length; i++) {
+            for (int j = 0; j < logRanges[i].length; j++) {
+                logRanges[i][j] = -1 * logRanges[i][j];
+            }
+        }
+        for (int i = 0; i < logRanges[0].length; i++) {
+            logRanges[0][i] = logRanges[0][i] - 1L ;//- (long) Math.pow(2, Main.dyadicRangeBits - 1);
+        }
+        long[] upper = Arrays.copyOf(logRanges[2], logRanges[2].length);
+        logRanges[2] = logRanges[1];
+        logRanges[1] = upper;
+        return logRanges;
     }
 
     public long[][] getLogRanges(long inputKey) {
@@ -320,16 +338,35 @@ public class OmniSketch{
         ArrayList<long[]> temp;
         //low += (long) Math.pow(2, Main.dyadicRangeBits - 1);
         //up += (long) Math.pow(2, Main.dyadicRangeBits - 1);
-        if (low < 0 || up < 0) {
-            System.out.println("Error because low or up < 0: low: " + low + " up: " + up);
-            System.exit(1);
-        }
-        temp = getLogRangesArrList(low + 1, up + 1);
-        for (long[] i: temp) {
-            i[0] = i[0] - 1L;// - (long) Math.pow(2, Main.dyadicRangeBits - 1);
-            i[1] = i[1] - 1L;// - (long) Math.pow(2, Main.dyadicRangeBits - 1);
+        if (low < 0 && up < 0) {
+            temp = getLogRangesArrListNegative(low, up);
+        } else if (low < 0) {
+            ArrayList<long[]> tempLow = getLogRangesArrListNegative(low, -1);
+            ArrayList<long[]> tempUp = getLogRangesArrList(1, up + 1);
+            for (long[] i: tempUp) {
+                i[0] = i[0] - 1L;// - (long) Math.pow(2, Main.dyadicRangeBits - 1);
+                i[1] = i[1] - 1L;// - (long) Math.pow(2, Main.dyadicRangeBits - 1);
+            }
+            temp = new ArrayList<>(tempLow);
+            temp.addAll(tempUp);
+        } else{
+            temp = getLogRangesArrList(low + 1, up + 1);
+            for (long[] i: temp) {
+                i[0] = i[0] - 1L;// - (long) Math.pow(2, Main.dyadicRangeBits - 1);
+                i[1] = i[1] - 1L;// - (long) Math.pow(2, Main.dyadicRangeBits - 1);
+            }
         }
         return temp;
+    }
+
+    public ArrayList<long[]> getLogRangesArrListNegative(long startInclusive, long stopInclusive) {
+        ArrayList<long[]> logRangesArrList = getLogRangesArrList(-1*startInclusive, -1*stopInclusive);
+        for (long[] range: logRangesArrList) {
+            long temp = range[0];
+            range[0] = -1*range[1];
+            range[1] = -1*temp;
+        }
+        return logRangesArrList;
     }
 
     private int getIndexOfRange(long[] longs) {

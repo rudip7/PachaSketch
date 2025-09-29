@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
@@ -189,6 +190,15 @@ public class ADTree {
         return adTree;
     }
 
+    public static ADTree fromResource(String resourcePath) throws IOException {
+        try (InputStream inputStream = ADTree.class.getClassLoader().getResourceAsStream(resourcePath)) {
+            if (inputStream == null) {
+                throw new IllegalArgumentException("Resource not found: " + resourcePath);
+            }
+            // Load the ADTree from the input stream (e.g., parse JSON or other formats)
+            return ADTree.fromJson(new String(inputStream.readAllBytes()));
+        }
+    }
     public static ADTree fromFile(String jsonFilePath) throws IOException {
         String jsonContent = new String(Files.readAllBytes(Paths.get(jsonFilePath)));
         return ADTree.fromJson(jsonContent);

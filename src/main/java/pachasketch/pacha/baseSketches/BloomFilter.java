@@ -35,7 +35,17 @@ public class BloomFilter implements Filter{
     public static BloomFilter buildFromGuarantees(double falsePositiveRate, int expectedElements) {
         // Calculate size and number of hash functions based on false positive rate and expected elements
         int size = (int) Math.ceil(-expectedElements * Math.log(falsePositiveRate) / (Math.log(2) * Math.log(2)));
+        if (size >= Integer.MAX_VALUE - 10){
+            // Sanity check to avoid JVM overflow
+
+            size = Integer.MAX_VALUE - 10;
+        }
         int numHashFunctions = (int) Math.ceil(Math.log(2) * size / expectedElements);
+        if (size == Integer.MAX_VALUE - 10){
+            double newFalsePositiveRate = Math.pow(1 - Math.exp(- (double) numHashFunctions * expectedElements / size), numHashFunctions);
+            System.out.println("Warning: Bloom filter size capped at Integer.MAX_VALUE - 10");
+            System.out.println("Requested false positive rate = " + falsePositiveRate + "; Achievable false positive rate = " + newFalsePositiveRate);
+        }
         return new BloomFilter(numHashFunctions, size);
     }
 
@@ -152,6 +162,11 @@ public class BloomFilter implements Filter{
         int byteSize = (int) Math.ceil(size / 8.0);
         return byteSize / (1024.0 * 1024.0);
     }
+
+    public int getSize(){
+        return size;
+    }
+
     @Override
     public String toJson() {
         Gson gson = new Gson();

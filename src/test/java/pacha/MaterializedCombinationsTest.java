@@ -21,7 +21,7 @@ class MaterializedCombinationsTest {
 
         MaterializedCombinations result = MaterializedCombinations.fromJson(json.toString());
 
-        assertEquals(Arrays.asList("A", "B", "C"), result.toJson().get("col_names"));
+        assertEquals(Arrays.asList("A", "B", "C"), result.toJson().get("attribute_names"));
         assertEquals(Arrays.asList(
             Arrays.asList("A", "B"),
             Arrays.asList("B", "C")

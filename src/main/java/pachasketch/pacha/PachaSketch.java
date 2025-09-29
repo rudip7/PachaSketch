@@ -4,9 +4,11 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonWriter;
+import pachasketch.Sketch;
 import pachasketch.pacha.baseSketches.BloomFilter;
 import pachasketch.pacha.baseSketches.CountMinSketch;
 import pachasketch.pacha.baseSketches.Filter;
+import pachasketch.pacha.baseSketches.NodeTracker;
 import pachasketch.pacha.components.ADTree;
 import pachasketch.pacha.components.MaterializedCombinations;
 import pachasketch.pacha.components.NumericalBitmap;
@@ -20,7 +22,7 @@ import java.io.Writer;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class PachaSketch {
+public class PachaSketch implements Sketch {
     private final int levels;
     private final int numDimensions;
     private final int[] catColMap;
@@ -63,7 +65,12 @@ public class PachaSketch {
         this.maxValues = new int[numColMap.length];
         this.minValues = new int[numColMap.length];
 
-        this.catIndex = catIndex;
+        if (catIndex == null || catIndex.getSize() > adTree.computeDistinctValues()){
+            this.catIndex = new NodeTracker(adTree.computeDistinctValues());
+        } else {
+            this.catIndex = catIndex;
+        }
+
         this.numIndex = numIndex;
         this.regionIndex = regionIndex;
         assert baseSketches.length == levels : "Number of base sketches must match number of levels";
@@ -423,8 +430,8 @@ public class PachaSketch {
         for(int idx : numColMap) {
             Object numPredicate = query.get(idx);
             if ((numPredicate instanceof List<?> bounds) && bounds.size() == 2) {
-                int lower = ((Double) bounds.get(0)).intValue();
-                int upper = ((Double) bounds.get(1)).intValue();
+                int lower = ((Number) bounds.get(0)).intValue();
+                int upper = ((Number) bounds.get(1)).intValue();
                 if (lower > upper) {
                     throw new IllegalArgumentException("Lower bound cannot be greater than upper bound.");
                 }
@@ -476,19 +483,24 @@ public class PachaSketch {
         List<String> catRegions = catIndex.filterBatch(keysCatRegions);
 
         // Prune empty numerical regions
+
         Map<Integer, List<String>> keysNumRegions = new HashMap<>(levels);
-        for (int i = 0; i < bAdicCubes.length; i++) {
-            String regionKey = String.valueOf(bAdicCubes[i][0]);
-            int cubeIndex = 1;
-            for (int j = 0; j < numColMap.length; j++) {
-                if (dimIndices[j]) {
-                    regionKey += ", " + bAdicCubes[i][cubeIndex];
-                    cubeIndex++;
-                } else {
-                    regionKey += ", *";
+        if (bAdicCubes == null) {
+            keysNumRegions.put(levels - 1, Collections.singletonList(levels - 1 + ", *".repeat(numColMap.length)));
+        } else {
+            for (int[] bAdicCube : bAdicCubes) {
+                StringBuilder regionKey = new StringBuilder(String.valueOf(bAdicCube[0]));
+                int cubeIndex = 1;
+                for (int j = 0; j < numColMap.length; j++) {
+                    if (dimIndices[j]) {
+                        regionKey.append(", ").append(bAdicCube[cubeIndex]);
+                        cubeIndex++;
+                    } else {
+                        regionKey.append(", *");
+                    }
                 }
+                keysNumRegions.computeIfAbsent(bAdicCube[0], k -> new ArrayList<>()).add(regionKey.toString());
             }
-            keysNumRegions.computeIfAbsent(bAdicCubes[i][0], k -> new ArrayList<>()).add(regionKey);
         }
 
         Map<Integer, List<String>> numRegions = new HashMap<>(keysNumRegions.size());
@@ -535,7 +547,7 @@ public class PachaSketch {
             stats = QueryStats.from(
                     relevantNodes.size(),
                     catRegions.size(),
-                    bAdicCubes.length,
+                    bAdicCubes != null ? bAdicCubes.length : 1,
                     nNumRegions,
                     nCandidateRegions,
                     nQueryRegions,
@@ -604,6 +616,14 @@ public class PachaSketch {
         return result;
     }
 
+    public void limitToSingleCombination() {
+        this.materialized = MaterializedCombinations.createSingleCombination(materialized.getAttributeNames());
+    }
+
+    public void extendToAllCombinations() {
+        this.materialized = MaterializedCombinations.createAllCombinations(materialized.getAttributeNames());
+    }
+
     public double getSizeInMB(){
         double size = 0.0;
         for (NumericalBitmap bitmap : numericalBitmaps) {
@@ -652,6 +672,21 @@ public class PachaSketch {
 
     public void setMaxNCubes(int maxNCubes) {
         this.maxNCubes = maxNCubes;
+    }
+
+    public void setBases(int[] newBases){
+        if (newBases.length != bases.length){
+            throw new IllegalArgumentException("New bases array must have the same length as the current bases array.");
+        }
+        if (processedElements > 0 ){
+            throw new IllegalStateException("Cannot change bases after processing elements.");
+        }
+        for (int i = 0; i < numericalBitmaps.length; i++) {
+            if (this.bases[i] != newBases[i]){
+                this.numericalBitmaps[i] = new NumericalBitmap(newBases[i], 110_000);
+            }
+        }
+        System.arraycopy(newBases, 0, this.bases, 0, newBases.length);
     }
 
     public String toJson() {

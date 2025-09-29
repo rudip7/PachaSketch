@@ -2,10 +2,14 @@ package pachasketch.utils;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import pachasketch.pacha.components.ADTree;
 
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Type;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -14,17 +18,29 @@ import java.util.stream.Stream;
 
 public class QueryFactory {
 
-    public static List<List<Object>> fromJSON(String pathToFile) {
+    public static List<List<Object>> fromJson(String jsonString) {
         Gson gson = new Gson();
-        try (FileReader reader = new FileReader(pathToFile)) {
-            Type mapType = new TypeToken<Map<String, Object>>() {}.getType();
-            Map<String, Object> jsonData = gson.fromJson(reader, mapType);
-            List<List<Object>> queries = (List<List<Object>>) jsonData.get("queries");
-            return queries;
+        Type mapType = new TypeToken<Map<String, Object>>() {}.getType();
+        Map<String, Object> jsonData = gson.fromJson(jsonString, mapType);
+        List<List<Object>> queries = (List<List<Object>>) jsonData.get("queries");
+        return queries;
+    }
+
+    public static List<List<Object>> fromResource(String resourcePath) {
+        try (InputStream inputStream = ADTree.class.getClassLoader().getResourceAsStream(resourcePath)) {
+            if (inputStream == null) {
+                throw new IllegalArgumentException("Resource not found: " + resourcePath);
+            }
+            return QueryFactory.fromJson(new String(inputStream.readAllBytes()));
         } catch (IOException e) {
             e.printStackTrace();
-            throw new RuntimeException("Failed to read JSON file: " + pathToFile, e);
+            throw new RuntimeException("Failed to read JSON resource: " + resourcePath, e);
         }
+    }
+
+    public static List<List<Object>> fromFile(String jsonFilePath) throws IOException {
+        String jsonContent = new String(Files.readAllBytes(Paths.get(jsonFilePath)));
+        return QueryFactory.fromJson(jsonContent);
     }
 
     public static List<Object> fromString(String query) {

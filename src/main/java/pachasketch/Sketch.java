@@ -1,5 +1,4 @@
 package pachasketch;
 
-public class Query {
-
+public interface Sketch {
 }

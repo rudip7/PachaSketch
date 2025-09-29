@@ -11,7 +11,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DataLoaders {
+
     public static double loadCSV(PachaSketch pachaSketch, String filePath, int batchSize) throws IOException {
+        return loadCSV(pachaSketch, filePath, batchSize, -1);
+    }
+    public static double loadCSV(PachaSketch pachaSketch, String filePath, int batchSize, int limit) throws IOException {
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
             String header = br.readLine(); // Read the header
             if (header == null) {
@@ -25,8 +29,9 @@ public class DataLoaders {
             long totalUpdateTime = 0;
             int batchCount = 1;
 
-            while ((line = br.readLine()) != null) {
+            while ((line = br.readLine()) != null && (limit < 0 || recordCount < limit)) {
                 currentBatch[currentIndex++] = line.split(",");
+                recordCount++;
 
                 if (currentIndex == batchSize) {
                     System.out.println("Processing batch "+ batchCount+": " + currentIndex);
@@ -36,7 +41,6 @@ public class DataLoaders {
                     }
                     totalUpdateTime += (System.nanoTime() - startTime); // Accumulate update time
 
-                    recordCount += currentIndex;
                     currentIndex = 0; // Reset index for the next batch
                     batchCount++;
                 }
@@ -55,7 +59,7 @@ public class DataLoaders {
             double throughput = (recordCount / (totalUpdateTime / 1_000_000_000.0)); // Records per second
 
             System.out.println("Processed " + recordCount + " records");
-            System.out.println("Total update time: " + (totalUpdateTime / 1_000_000) + " ms");
+            System.out.println("Total update time: " + (totalUpdateTime / 1_000_000_000) + " s");
             System.out.println("Throughput: " + throughput + " records/second\n");
             return throughput;
         } catch (IOException e) {
@@ -65,6 +69,10 @@ public class DataLoaders {
     }
 
     public static double loadCSV(OmniSketch omniSketch, String filePath, int batchSize) throws IOException {
+        return loadCSV(omniSketch, filePath, batchSize, -1);
+    }
+
+    public static double loadCSV(OmniSketch omniSketch, String filePath, int batchSize, int limit) throws IOException {
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
             String header = br.readLine(); // Read the header
             if (header == null) {
@@ -77,8 +85,10 @@ public class DataLoaders {
             int recordCount = 0;
             long totalUpdateTime = 0;
             int batchCount = 1;
-            while ((line = br.readLine()) != null) {
+            while ((line = br.readLine()) != null && (limit < 0 || recordCount < limit)) {
                 currentBatch[currentIndex++] = line.split(",");
+                recordCount++;
+
                 if (currentIndex == batchSize) {
                     System.out.println("Processing batch "+ batchCount+": " + currentIndex);
                     long startTime = System.nanoTime(); // Start timing
@@ -87,7 +97,6 @@ public class DataLoaders {
                     }
                     totalUpdateTime += (System.nanoTime() - startTime); // Accumulate update time
 
-                    recordCount += currentIndex;
                     currentIndex = 0; // Reset index for the next batch
                     batchCount++;
                 }
@@ -106,7 +115,7 @@ public class DataLoaders {
             double throughput = (recordCount / (totalUpdateTime / 1_000_000_000.0)); // Records per second
 
             System.out.println("Processed " + recordCount + " records");
-            System.out.println("Total update time: " + (totalUpdateTime / 1_000_000) + " ms");
+            System.out.println("Total update time: " + (totalUpdateTime / 1_000_000_000) + " s");
             System.out.println("Throughput: " + throughput + " records/second\n");
             return throughput;
         } catch (IOException e) {
