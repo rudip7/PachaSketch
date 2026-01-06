@@ -258,7 +258,7 @@ public class NumericalBitmap {
                 }
             } else {
                 for (int i = 0; i < bAdicIndices.length; i++) {
-                    int idx = -bAdicIndices[i] / scale - 1;
+                    int idx = Math.max(-bAdicIndices[i] / scale - 1, 0);
                     if (idx < this.negativeBitmap.length() && this.negativeBitmap.get(idx)) {
                         prunedIndices.add(bAdicIndices[i]);
                     }

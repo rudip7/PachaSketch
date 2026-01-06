@@ -8,7 +8,7 @@ public class PachaQueryResult {
     private QueryStats stats;
     private int forcedAlignment = -1;
     private double runtime;
-    private int estimate;
+    private double estimate;
 
     public PachaQueryResult(Map<Integer, List<String>> regions, QueryStats stats, int forcedAlignment, int estimate) {
         this.regions = regions;
@@ -28,7 +28,7 @@ public class PachaQueryResult {
         this.stats = null;
         this.estimate = estimate;
     }
-    public void setEstimate(int estimate) {
+    public void setEstimate(double estimate) {
         this.estimate = estimate;
     }
 
@@ -40,7 +40,7 @@ public class PachaQueryResult {
         return stats;
     }
 
-    public int estimate() {
+    public double estimate() {
         return estimate;
     }
 

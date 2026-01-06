@@ -2,6 +2,7 @@ package pacha;
 
 import org.junit.jupiter.api.Test;
 import pachasketch.pacha.PachaSketch;
+import pachasketch.pacha.baseSketches.BloomFilter;
 import pachasketch.utils.PachaSketchFactory;
 import pachasketch.pacha.components.ADTree;
 import pachasketch.pacha.components.MaterializedCombinations;
@@ -138,7 +139,7 @@ public class PachaSketchTest {
         assertTrue(sketch.catIndex.query("a1, b1, *"));
         assertTrue(sketch.catIndex.query("a1, b1, c1"));
 
-        assertEquals(10, sketch.numIndex.getProcessedElements());
+        assertEquals(10, ((BloomFilter) sketch.numIndex).getProcessedElements());
         assertTrue(sketch.numIndex.query("0, 5, 20"));
         assertTrue(sketch.numIndex.query("1, 2, 2"));
         assertTrue(sketch.numIndex.query("2, 1, 0"));
@@ -150,7 +151,7 @@ public class PachaSketchTest {
         assertTrue(sketch.numIndex.query("2, *, 0"));
         assertTrue(sketch.numIndex.query("2, *, *"));
 
-        assertEquals(40, sketch.regionIndex.getProcessedElements());
+        assertEquals(40, ((BloomFilter) sketch.regionIndex).getProcessedElements());
         assertTrue(sketch.regionIndex.query("a1, b1, c1, 0, 5, 20"));
         assertTrue(sketch.regionIndex.query("a1, b1, c1, 0, *, 20"));
         assertTrue(sketch.regionIndex.query("a1, b1, c1, 1, 2, 2"));

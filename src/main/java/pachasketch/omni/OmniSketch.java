@@ -360,7 +360,7 @@ public class OmniSketch implements Sketch {
     }
 
     public ArrayList<long[]> getLogRangesArrListNegative(long startInclusive, long stopInclusive) {
-        ArrayList<long[]> logRangesArrList = getLogRangesArrList(-1*startInclusive, -1*stopInclusive);
+        ArrayList<long[]> logRangesArrList = getLogRangesArrList(-1*stopInclusive, -1*startInclusive);
         for (long[] range: logRangesArrList) {
             long temp = range[0];
             range[0] = -1*range[1];

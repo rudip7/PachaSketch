@@ -22,7 +22,9 @@ public class Scalability {
                 "/lineitem_8.csv",
         };
 
-        int[] nElements = new int[]{187_500, 750_000, 3_000_000, 12_000_000, 48_000_000};
+//        int[] nElements = new int[]{187_500, 750_000, 3_000_000, 12_000_000, 48_000_000};
+        int[] nElements = new int[]{12_000_000, 48_000_000};
+
 
         System.out.println("Running scalability experiments...");
         for (int i = 0; i < datasets.length; i++) {
@@ -47,7 +49,7 @@ public class Scalability {
         String label = (nElements >= 1_000_000) ? (nElements / 1_000_000) + "_M" : (nElements / 1_000) + "_k";
         String resultsPath = resultsBaseDir+"/scalability/"+datasetName+"random_scale_"+label+".csv";
 
-        System.out.println("Evaluating random queries...");
+        System.out.println("Evaluating random queries...\n");
         Files.createDirectories(Path.of(resultsBaseDir+"/scalability"));
         String queriesFile = resourcePath + datasetName + "_random.json";
         QuerySetEvaluator.evaluateQuerySetFromResource(pachaSketch, queriesFile, resultsPath);

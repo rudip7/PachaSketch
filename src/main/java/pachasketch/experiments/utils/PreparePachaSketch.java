@@ -3,6 +3,8 @@ package pachasketch.experiments.utils;
 import pachasketch.pacha.PachaSketch;
 import pachasketch.pacha.baseSketches.BloomFilter;
 import pachasketch.pacha.baseSketches.CountMinSketch;
+import pachasketch.pacha.baseSketches.Filter;
+import pachasketch.pacha.baseSketches.ScalableBloomFilter;
 import pachasketch.pacha.components.ADTree;
 import pachasketch.pacha.components.MaterializedCombinations;
 import pachasketch.utils.DataLoaders;
@@ -139,11 +141,22 @@ public class PreparePachaSketch {
         System.out.println("Memory for numerical index: " + memNumIndex + " MB");
         double memRegionIndex = memIndex * pRegionIndex;
         System.out.println("Memory for region index: " + memRegionIndex + " MB");
-        int nBitsNumIndex = (int) Math.ceil(memNumIndex * 1024 * 1024 * 8);
-        int nBitsRegionIndex = (int) Math.ceil(memRegionIndex * 1024 * 1024 * 8);
+        long nBitsNumIndex = (long) Math.ceil(memNumIndex * 1024 * 1024 * 8);
+        long nBitsRegionIndex = (long) Math.ceil(memRegionIndex * 1024 * 1024 * 8);
 
-        BloomFilter numIndex = new BloomFilter(nHashIndex, nBitsNumIndex);
-        BloomFilter regionIndex = new BloomFilter(nHashIndex, nBitsRegionIndex);
+        Filter numIndex;
+        if (nBitsNumIndex > Integer.MAX_VALUE - 8){
+            numIndex = new ScalableBloomFilter(nBitsNumIndex, nHashIndex);
+        } else {
+            numIndex = new BloomFilter(nHashIndex, (int) nBitsNumIndex);
+        }
+
+        Filter regionIndex;
+        if (nBitsRegionIndex > Integer.MAX_VALUE - 8){
+            regionIndex = new ScalableBloomFilter(nBitsRegionIndex, nHashIndex);
+        } else {
+            regionIndex = new BloomFilter(nHashIndex, (int) nBitsRegionIndex);
+        }
 
         PachaSketch pachaSketch = new PachaSketch(
                 levels,

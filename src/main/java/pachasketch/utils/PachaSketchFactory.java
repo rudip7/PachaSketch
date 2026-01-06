@@ -3,6 +3,8 @@ package pachasketch.utils;
 import pachasketch.pacha.PachaSketch;
 import pachasketch.pacha.baseSketches.BloomFilter;
 import pachasketch.pacha.baseSketches.CountMinSketch;
+import pachasketch.pacha.baseSketches.Filter;
+import pachasketch.pacha.baseSketches.ScalableBloomFilter;
 import pachasketch.pacha.components.ADTree;
 import pachasketch.pacha.components.MaterializedCombinations;
 
@@ -39,9 +41,9 @@ public class PachaSketchFactory {
 
         double adjustedEps = eps / (catUpdates * materialized.getNumCombinations());
 
-        BloomFilter catIndex = BloomFilter.buildFromGuarantees(falsePositiveRate, nElements * catUpdates);
-        BloomFilter numIndex = BloomFilter.buildFromGuarantees(falsePositiveRate, nElements * numUpdates);
-        BloomFilter regionIndex = BloomFilter.buildFromGuarantees(falsePositiveRate, nElements * regionUpdates);
+        Filter catIndex = createFilter(falsePositiveRate, (long) nElements * catUpdates);
+        Filter numIndex = createFilter(falsePositiveRate, (long) nElements * numUpdates);
+        Filter regionIndex = createFilter(falsePositiveRate, (long) nElements * regionUpdates);
 
         CountMinSketch[] baseSketches = new CountMinSketch[levels];
         for (int i = 0; i < levels; i++) {
@@ -50,5 +52,14 @@ public class PachaSketchFactory {
 
         return new PachaSketch(levels, catColMap, numColMap, bases, adTree, materialized,
                 catIndex, numIndex, regionIndex, baseSketches);
+    }
+
+    public static Filter createFilter(double falsePositiveRate, long expectedElements){
+        long size = (long) Math.ceil(-expectedElements * Math.log(falsePositiveRate) / (Math.log(2) * Math.log(2)));
+        if (size > Integer.MAX_VALUE - 8) {
+            return ScalableBloomFilter.buildFromGuarantees(falsePositiveRate, expectedElements);
+        } else {
+            return BloomFilter.buildFromGuarantees(falsePositiveRate, expectedElements);
+        }
     }
 }

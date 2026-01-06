@@ -1,28 +1,21 @@
 package pachasketch.pacha;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.stream.JsonWriter;
 import pachasketch.Sketch;
 import pachasketch.pacha.baseSketches.BloomFilter;
-import pachasketch.pacha.baseSketches.CountMinSketch;
+import pachasketch.pacha.baseSketches.CountSketch;
 import pachasketch.pacha.baseSketches.Filter;
 import pachasketch.pacha.baseSketches.NodeTracker;
 import pachasketch.pacha.components.ADTree;
 import pachasketch.pacha.components.MaterializedCombinations;
 import pachasketch.pacha.components.NumericalBitmap;
 import pachasketch.pacha.utils.BAdicUtils;
-import pachasketch.pacha.utils.QueryStats;
 import pachasketch.pacha.utils.PachaQueryResult;
+import pachasketch.pacha.utils.QueryStats;
 
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Writer;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class PachaSketch implements Sketch {
+public class PachaSketchAvg implements Sketch {
     private final int levels;
     private final int numDimensions;
     private final int[] catColMap;
@@ -37,17 +30,19 @@ public class PachaSketch implements Sketch {
     public Filter catIndex;
     public Filter numIndex;
     public Filter regionIndex;
-    public CountMinSketch[] baseSketches;
+    public CountSketch[] baseSketchesSum;
+    public CountSketch[] baseSketchesCount;
 
     public int forcedAlignment = -1; // -1 means no forced alignment
 
     private int maxNCubes = 1_000_000; // Default value, can be adjusted based on requirements
 
 
-    public PachaSketch(int levels, int[] catColMap, int[] numColMap,
-                       int[] bases, ADTree adTree, MaterializedCombinations materialized,
-                       Filter catIndex, Filter numIndex, Filter regionIndex,
-                       CountMinSketch[] baseSketches) {
+    public PachaSketchAvg(int levels, int[] catColMap, int[] numColMap,
+                          int[] bases, ADTree adTree, MaterializedCombinations materialized,
+                          Filter catIndex, Filter numIndex, Filter regionIndex,
+                          CountSketch[] baseSketchesSum,
+                          CountSketch[] baseSketchesCount) {
         this.levels = levels;
         this.numDimensions = catColMap.length + numColMap.length;
         this.catColMap = catColMap;
@@ -73,8 +68,9 @@ public class PachaSketch implements Sketch {
 
         this.numIndex = numIndex;
         this.regionIndex = regionIndex;
-        assert baseSketches.length == levels : "Number of base sketches must match number of levels";
-        this.baseSketches = baseSketches;
+        assert baseSketchesSum.length == levels : "Number of base sketches must match number of levels";
+        this.baseSketchesSum = baseSketchesSum;
+        this.baseSketchesCount = baseSketchesCount;
 
         this.processedElements = 0;
     }
@@ -113,7 +109,7 @@ public class PachaSketch implements Sketch {
         return mappings;
     }
 
-    public void update(String[] element) {
+    public void update(String[] element, int increment) {
         // Extract categorical and numerical values
         List<String> catValues = new ArrayList<>(catColMap.length);
         int[] numValues = new int[numColMap.length];
@@ -168,7 +164,9 @@ public class PachaSketch implements Sketch {
         for(int level : mappedRegions.keySet()){
             List<String> regions = mappedRegions.get(level);
             regionIndex.updateBatch(regions);
-            baseSketches[level].updateBatch(regions);
+            baseSketchesSum[level].updateBatch(regions, increment);
+            baseSketchesCount[level].updateBatch(regions, 1);
+
         }
 
         processedElements++;
@@ -561,8 +559,8 @@ public class PachaSketch implements Sketch {
                 forcedAlignment);
     }
 
-    public int query(List<Object> query){
-        return (int) query(query, false, false).estimate();
+    public double query(List<Object> query){
+        return query(query, false, false).estimate();
     }
 
     public PachaQueryResult query(List<Object> query, boolean detailed, boolean debug){
@@ -585,13 +583,16 @@ public class PachaSketch implements Sketch {
             return new PachaQueryResult(0); // No valid regions found
         }
 
-        int estimate = 0;
+        int estimateSum = 0;
+        int estimateCount = 0;
         Map<Integer, List<String>> queryRegions = queryResult.regions();
         for (Integer level : queryRegions.keySet()){
             List<String> regions = queryRegions.get(level);
-            estimate += baseSketches[level].queryBatch(regions);
+            estimateSum += baseSketchesSum[level].queryBatch(regions);
+            estimateCount += baseSketchesCount[level].queryBatch(regions);
         }
 
+        double estimate = estimateCount > 0 ? (double) estimateSum / estimateCount : 0.0;
         if(debug){
             System.out.println("Estimate: " + estimate);
         }
@@ -632,7 +633,7 @@ public class PachaSketch implements Sketch {
         size += catIndex.getSizeInMB();
         size += numIndex.getSizeInMB();
         size += regionIndex.getSizeInMB();
-        for (CountMinSketch cms : baseSketches) {
+        for (CountSketch cms : baseSketchesSum) {
             size += cms.getSizeInMB();
         }
         return size;
@@ -689,99 +690,99 @@ public class PachaSketch implements Sketch {
         System.arraycopy(newBases, 0, this.bases, 0, newBases.length);
     }
 
-    public String toJson() {
-        Gson gson = new Gson();
-        JsonObject jsonObject = new JsonObject();
+//    public String toJson() {
+//        Gson gson = new Gson();
+//        JsonObject jsonObject = new JsonObject();
+//
+//        jsonObject.addProperty("levels", levels);
+//        jsonObject.addProperty("numDimensions", numDimensions);
+//        jsonObject.add("catColMap", gson.toJsonTree(catColMap));
+//        jsonObject.add("numColMap", gson.toJsonTree(numColMap));
+//        jsonObject.add("bases", gson.toJsonTree(bases));
+//        jsonObject.add("adTree", gson.toJsonTree(adTree.toJson()));
+//        jsonObject.add("materialized", gson.toJsonTree(materialized.toJson()));
+//        jsonObject.add("numericalBitmaps", gson.toJsonTree(
+//                Arrays.stream(numericalBitmaps).map(NumericalBitmap::toJson).toArray()));
+//        jsonObject.add("catIndex", gson.toJsonTree(catIndex.toJson()));
+//        jsonObject.add("numIndex", gson.toJsonTree(numIndex.toJson()));
+//        jsonObject.add("regionIndex", gson.toJsonTree(regionIndex.toJson()));
+//        jsonObject.add("baseSketches", gson.toJsonTree(
+//                Arrays.stream(baseSketches).map(CountSketch::toJson).toArray()));
+//        jsonObject.addProperty("maxNCubes", maxNCubes);
+//        jsonObject.addProperty("processedElements", processedElements);
+//
+//        return gson.toJson(jsonObject);
+//    }
 
-        jsonObject.addProperty("levels", levels);
-        jsonObject.addProperty("numDimensions", numDimensions);
-        jsonObject.add("catColMap", gson.toJsonTree(catColMap));
-        jsonObject.add("numColMap", gson.toJsonTree(numColMap));
-        jsonObject.add("bases", gson.toJsonTree(bases));
-        jsonObject.add("adTree", gson.toJsonTree(adTree.toJson()));
-        jsonObject.add("materialized", gson.toJsonTree(materialized.toJson()));
-        jsonObject.add("numericalBitmaps", gson.toJsonTree(
-                Arrays.stream(numericalBitmaps).map(NumericalBitmap::toJson).toArray()));
-        jsonObject.add("catIndex", gson.toJsonTree(catIndex.toJson()));
-        jsonObject.add("numIndex", gson.toJsonTree(numIndex.toJson()));
-        jsonObject.add("regionIndex", gson.toJsonTree(regionIndex.toJson()));
-        jsonObject.add("baseSketches", gson.toJsonTree(
-                Arrays.stream(baseSketches).map(CountMinSketch::toJson).toArray()));
-        jsonObject.addProperty("maxNCubes", maxNCubes);
-        jsonObject.addProperty("processedElements", processedElements);
+//    public void saveAsJson(String filePath) throws IOException {
+//        try (Writer writer = new FileWriter(filePath);
+//             JsonWriter jsonWriter = new JsonWriter(writer)) {
+//            jsonWriter.beginObject();
+//            Gson gson = new Gson();
+//
+//            jsonWriter.name("levels").value(levels);
+//            jsonWriter.name("numDimensions").value(numDimensions);
+//            jsonWriter.name("catColMap");
+//            gson.toJson(catColMap, int[].class, jsonWriter);
+//            jsonWriter.name("numColMap");
+//            gson.toJson(numColMap, int[].class, jsonWriter);
+//            jsonWriter.name("bases");
+//            gson.toJson(bases, int[].class, jsonWriter);
+//            jsonWriter.name("adTree");
+//            gson.toJson(adTree.toJson(), String.class, jsonWriter);
+//            jsonWriter.name("materialized");
+//            gson.toJson(materialized.toJson(), String.class, jsonWriter);
+//            jsonWriter.name("numericalBitmaps");
+//            gson.toJson(Arrays.stream(numericalBitmaps).map(NumericalBitmap::toJson).toArray(), Object[].class, jsonWriter);
+//            jsonWriter.name("catIndex");
+//            gson.toJson(catIndex.toJson(), String.class, jsonWriter);
+//            jsonWriter.name("numIndex");
+//            gson.toJson(numIndex.toJson(), String.class, jsonWriter);
+//            jsonWriter.name("regionIndex");
+//            gson.toJson(regionIndex.toJson(), String.class, jsonWriter);
+//            jsonWriter.name("baseSketches");
+//            gson.toJson(Arrays.stream(baseSketches).map(CountMinSketch::toJson).toArray(), Object[].class, jsonWriter);
+//            jsonWriter.name("maxNCubes").value(maxNCubes);
+//            jsonWriter.name("processedElements").value(processedElements);
+//
+//            jsonWriter.endObject();
+//        }
+//    }
 
-        return gson.toJson(jsonObject);
-    }
-
-    public void saveAsJson(String filePath) throws IOException {
-        try (Writer writer = new FileWriter(filePath);
-             JsonWriter jsonWriter = new JsonWriter(writer)) {
-            jsonWriter.beginObject();
-            Gson gson = new Gson();
-
-            jsonWriter.name("levels").value(levels);
-            jsonWriter.name("numDimensions").value(numDimensions);
-            jsonWriter.name("catColMap");
-            gson.toJson(catColMap, int[].class, jsonWriter);
-            jsonWriter.name("numColMap");
-            gson.toJson(numColMap, int[].class, jsonWriter);
-            jsonWriter.name("bases");
-            gson.toJson(bases, int[].class, jsonWriter);
-            jsonWriter.name("adTree");
-            gson.toJson(adTree.toJson(), String.class, jsonWriter);
-            jsonWriter.name("materialized");
-            gson.toJson(materialized.toJson(), String.class, jsonWriter);
-            jsonWriter.name("numericalBitmaps");
-            gson.toJson(Arrays.stream(numericalBitmaps).map(NumericalBitmap::toJson).toArray(), Object[].class, jsonWriter);
-            jsonWriter.name("catIndex");
-            gson.toJson(catIndex.toJson(), String.class, jsonWriter);
-            jsonWriter.name("numIndex");
-            gson.toJson(numIndex.toJson(), String.class, jsonWriter);
-            jsonWriter.name("regionIndex");
-            gson.toJson(regionIndex.toJson(), String.class, jsonWriter);
-            jsonWriter.name("baseSketches");
-            gson.toJson(Arrays.stream(baseSketches).map(CountMinSketch::toJson).toArray(), Object[].class, jsonWriter);
-            jsonWriter.name("maxNCubes").value(maxNCubes);
-            jsonWriter.name("processedElements").value(processedElements);
-
-            jsonWriter.endObject();
-        }
-    }
-
-    public static PachaSketch fromJson(String json) {
-        Gson gson = new Gson();
-        JsonObject jsonObject = gson.fromJson(json, JsonObject.class);
-
-        int levels = jsonObject.get("levels").getAsInt();
-        int[] catColMap = gson.fromJson(jsonObject.get("catColMap"), int[].class);
-        int[] numColMap = gson.fromJson(jsonObject.get("numColMap"), int[].class);
-        int[] bases = gson.fromJson(jsonObject.get("bases"), int[].class);
-        ADTree adTree = ADTree.fromJson(jsonObject.get("adTree").getAsString());
-        MaterializedCombinations materialized = MaterializedCombinations.fromJson(jsonObject.get("materialized").toString());
-        BloomFilter catIndex = BloomFilter.fromJson(jsonObject.get("catIndex").getAsString());
-        BloomFilter numIndex = BloomFilter.fromJson(jsonObject.get("numIndex").getAsString());
-        BloomFilter regionIndex = BloomFilter.fromJson(jsonObject.get("regionIndex").getAsString());
-
-        JsonArray baseSketchesJson = (JsonArray) jsonObject.get("baseSketches");
-        CountMinSketch[] baseSketches = new CountMinSketch[baseSketchesJson.size()];
-        for (int i = 0; i < baseSketchesJson.size(); i++) {
-            String cmsJson = baseSketchesJson.get(i).getAsString();
-            baseSketches[i] = CountMinSketch.fromJson(cmsJson);
-        }
-        int maxNCubes = jsonObject.get("maxNCubes").getAsInt();
-        PachaSketch pachaSketch = new PachaSketch(levels, catColMap, numColMap, bases, adTree, materialized,
-                catIndex, numIndex, regionIndex, baseSketches);
-        pachaSketch.maxNCubes = maxNCubes;
-        pachaSketch.processedElements = jsonObject.get("processedElements").getAsInt();
-
-        JsonArray numericalBitmapsJson = (JsonArray) jsonObject.get("numericalBitmaps");
-        for (int i = 0; i < numericalBitmapsJson.size(); i++) {
-            String nbJson = numericalBitmapsJson.get(i).getAsString();
-            pachaSketch.numericalBitmaps[i] = NumericalBitmap.fromJson(nbJson);
-        }
-
-        return pachaSketch;
-    }
+//    public static PachaSketchSum fromJson(String json) {
+//        Gson gson = new Gson();
+//        JsonObject jsonObject = gson.fromJson(json, JsonObject.class);
+//
+//        int levels = jsonObject.get("levels").getAsInt();
+//        int[] catColMap = gson.fromJson(jsonObject.get("catColMap"), int[].class);
+//        int[] numColMap = gson.fromJson(jsonObject.get("numColMap"), int[].class);
+//        int[] bases = gson.fromJson(jsonObject.get("bases"), int[].class);
+//        ADTree adTree = ADTree.fromJson(jsonObject.get("adTree").getAsString());
+//        MaterializedCombinations materialized = MaterializedCombinations.fromJson(jsonObject.get("materialized").toString());
+//        BloomFilter catIndex = BloomFilter.fromJson(jsonObject.get("catIndex").getAsString());
+//        BloomFilter numIndex = BloomFilter.fromJson(jsonObject.get("numIndex").getAsString());
+//        BloomFilter regionIndex = BloomFilter.fromJson(jsonObject.get("regionIndex").getAsString());
+//
+//        JsonArray baseSketchesJson = (JsonArray) jsonObject.get("baseSketches");
+//        CountMinSketch[] baseSketches = new CountMinSketch[baseSketchesJson.size()];
+//        for (int i = 0; i < baseSketchesJson.size(); i++) {
+//            String cmsJson = baseSketchesJson.get(i).getAsString();
+//            baseSketches[i] = CountMinSketch.fromJson(cmsJson);
+//        }
+//        int maxNCubes = jsonObject.get("maxNCubes").getAsInt();
+//        PachaSketchSum pachaSketch = new PachaSketchSum(levels, catColMap, numColMap, bases, adTree, materialized,
+//                catIndex, numIndex, regionIndex, baseSketches);
+//        pachaSketch.maxNCubes = maxNCubes;
+//        pachaSketch.processedElements = jsonObject.get("processedElements").getAsInt();
+//
+//        JsonArray numericalBitmapsJson = (JsonArray) jsonObject.get("numericalBitmaps");
+//        for (int i = 0; i < numericalBitmapsJson.size(); i++) {
+//            String nbJson = numericalBitmapsJson.get(i).getAsString();
+//            pachaSketch.numericalBitmaps[i] = NumericalBitmap.fromJson(nbJson);
+//        }
+//
+//        return pachaSketch;
+//    }
 
     @Override
     public boolean equals(Object obj) {
@@ -791,7 +792,7 @@ public class PachaSketch implements Sketch {
         if (obj == null || getClass() != obj.getClass()) {
             return false;
         }
-        PachaSketch other = (PachaSketch) obj;
+        PachaSketchAvg other = (PachaSketchAvg) obj;
         return levels == other.levels &&
                numDimensions == other.numDimensions &&
                maxNCubes == other.maxNCubes &&
@@ -800,7 +801,7 @@ public class PachaSketch implements Sketch {
                Arrays.equals(numColMap, other.numColMap) &&
                Arrays.equals(bases, other.bases) &&
                Arrays.equals(numericalBitmaps, other.numericalBitmaps) &&
-               Arrays.equals(baseSketches, other.baseSketches) &&
+               Arrays.equals(baseSketchesSum, other.baseSketchesSum) &&
                Objects.equals(adTree, other.adTree) &&
                Objects.equals(materialized, other.materialized) &&
                Objects.equals(catIndex, other.catIndex) &&

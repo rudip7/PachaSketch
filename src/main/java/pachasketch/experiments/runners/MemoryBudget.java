@@ -20,10 +20,10 @@ public class MemoryBudget {
         int[] maxNCubes = new int[]{1_000, 25_000, 100_000, 1_000_000, 1_000_000};
         int[] nHashIndex = new int[]{1, 1, 2, 2, 3};
 
-        int[] limits = new int[]{300_000, 300_000, 500_000, 10_000_000, 10_000_000};
+        int[] limits = new int[]{3_000_000, 3_000_000, 3_000_000, 3_000_000, 3_000_000};
         int batchSize = 100_000;
 
-        System.out.println("Running memory budget experiments...");
+        System.out.println("New!: Running memory budget experiments...");
         System.out.println("PachaSketch:");
         String datasetPath = dataDir+"/lineitem_8.csv";
         for (int i = 0; i < memBudgets.length; i++) {
@@ -47,7 +47,7 @@ public class MemoryBudget {
         String resourcePath = "queries/" + datasetName + "/";
         String queriesFile = resourcePath + datasetName + "_random.json";
 
-        Files.createDirectories(Path.of(resultsBaseDir+"/memory_budget"));
+        Files.createDirectories(Path.of(resultsBaseDir+"/memory_budget/pacha"));
         if (!datasetName.equals("tpch")){
             throw new IllegalArgumentException("For now only TPC-H Lineitem is supported");
         }
@@ -74,7 +74,7 @@ public class MemoryBudget {
                     for (int i = 0; i < currentIndex; i++) {
                         pachaSketch.update(currentBatch[i]);
                     }
-                    String resultsPath = resultsBaseDir+"/memory_budget/"+datasetName+"memory_"+memBudget+"_MB_"+batchCount+".csv";
+                    String resultsPath = resultsBaseDir+"/memory_budget/pacha/"+datasetName+"memory_"+memBudget+"_MB_"+batchCount+".csv";
 
                     System.out.println("Evaluating random queries...");
                     QuerySetEvaluator.evaluateQuerySetFromResource(pachaSketch, queriesFile, resultsPath);
@@ -98,15 +98,14 @@ public class MemoryBudget {
         String resourcePath = "queries/" + datasetName + "/";
         String queriesFile = resourcePath + datasetName + "_random.json";
 
-        Files.createDirectories(Path.of(resultsBaseDir+"/memory_budget"));
+        Files.createDirectories(Path.of(resultsBaseDir+"/memory_budget/omni"));
 
         if (!datasetName.equals("tpch")){
             throw new IllegalArgumentException("For now only TPC-H Lineitem is supported");
         }
         double eps = 0.1;
         double delta = 0.1;
-        int dyadicRangeBits = 16;
-        OmniSketch omniSketch = PrepareOmniSketch.forTpch(eps, delta, memBudget, dyadicRangeBits);
+        OmniSketch omniSketch = PrepareOmniSketch.forTpch(eps, delta, memBudget);
 
         try (BufferedReader br = new BufferedReader(new FileReader(datasetPath))) {
             String header = br.readLine(); // Read the header
@@ -130,7 +129,7 @@ public class MemoryBudget {
                     for (int i = 0; i < currentIndex; i++) {
                         omniSketch.add(recordCount - (currentIndex - i), currentBatch[i]);
                     }
-                    String resultsPath = resultsBaseDir+"/memory_budget/"+datasetName+"memory_"+memBudget+"_MB_"+batchCount+".csv";
+                    String resultsPath = resultsBaseDir+"/memory_budget/omni/"+datasetName+"memory_"+memBudget+"_MB_"+batchCount+".csv";
 
                     System.out.println("Evaluating random queries...");
                     QuerySetEvaluator.evaluateQuerySetFromResource(omniSketch, queriesFile, resultsPath);

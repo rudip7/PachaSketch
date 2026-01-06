@@ -1,6 +1,8 @@
 package pachasketch.experiments;
 
+import pachasketch.experiments.runners.DifferentDatasets;
 import pachasketch.experiments.runners.PachaParameters;
+import pachasketch.experiments.runners.Scalability;
 import pachasketch.experiments.utils.PreparePachaSketch;
 import pachasketch.experiments.utils.Utils;
 import pachasketch.omni.OmniSketch;
@@ -39,10 +41,32 @@ public class Playground {
 //        for (long[] range : logRangesArrList) {
 //            System.out.println("Range: [" + range[0] + ", " + range[1] + "]");
 //        }
+//        String datasetPath = "../pacha_experiments/pacha_data/acs_folktables.csv";
         String datasetPath = "../pacha_experiments/pacha_data/lineitem_0.1.csv";
-        String resultsBaseDir = "../pacha_experiments/pacha_results";
+//        String datasetPath = "../pacha_experiments/pacha_data/bank_marketing.csv";
+//        String datasetDir = "../pacha_experiments/pacha_data";
+//
+//        String resultsBaseDir = "../pacha_experiments/pacha_results";
 //        PachaParameters.runDifferentLevels(7, datasetPath, resultsBaseDir);
-        PachaParameters.runDifferentBases(new int[]{2, 2, 2, 2, 2}, datasetPath, resultsBaseDir);
+
+//        DifferentDatasets.runPacha(datasetPath, resultsBaseDir+"/pacha");
+//        double sizeInMB = PreparePachaSketch.standardValues(datasetPath).getSizeInMB();
+//        DifferentDatasets.runOmni(sizeInMB, datasetPath, resultsBaseDir+"/omni");
+
+//        Scalability.run(datasetDir, resultsBaseDir);
+
+
+        System.out.println("PachaSketch varying error guarantees experiment...");
+        double[] falsePositiveRates = new double[]{0.0025, 0.005, 0.01, 0.02, 0.04};
+        double[] epsilons = new double[]{0.000025, 0.00005, 0.0001, 0.0002, 0.0004};
+        double delta = 0.01;
+        int levels = 5;
+
+//        String datasetPath = dataDir+"/lineitem_0.1.csv";
+        for(int i = 0; i < falsePositiveRates.length; i++) {
+            PachaSketch pachaSketch = PreparePachaSketch.forTpch(falsePositiveRates[i], epsilons[i], delta, levels, 599_934);
+            System.out.println("p: " + falsePositiveRates[i] + ", eps: " + epsilons[i] + ", size: " + pachaSketch.getSizeInMB() + " MB");
+        }
     }
 
     public static ArrayList<long[]> getLogRangesArrListNegative(long startInclusive, long stopInclusive, int dyadicRangeBits) {
