@@ -4,6 +4,8 @@ import pachasketch.Sketch;
 import pachasketch.omni.OmniSketch;
 import pachasketch.omni.utils.OmniQueryResult;
 import pachasketch.pacha.PachaSketch;
+import pachasketch.pacha.PachaSketchAvg;
+import pachasketch.pacha.PachaSketchSum;
 import pachasketch.pacha.utils.PachaQueryResult;
 import pachasketch.pacha.utils.QueryStats;
 
@@ -18,8 +20,8 @@ import static java.nio.file.Files.createDirectories;
 public class QuerySetEvaluator {
 
     public static void evaluateQuerySetFromResource(Sketch pachaSketch, String resourcePath, String resultFile) throws IOException {
-        if (pachaSketch instanceof PachaSketch) {
-            evaluateQuerySetPachaFromResource((PachaSketch) pachaSketch, resourcePath, resultFile);
+        if (pachaSketch instanceof PachaSketch || pachaSketch instanceof PachaSketchSum || pachaSketch instanceof PachaSketchAvg) {
+            evaluateQuerySetPachaFromResource(pachaSketch, resourcePath, resultFile);
         } else if (pachaSketch instanceof OmniSketch) {
             evaluateQuerySetOmniFromResource((OmniSketch) pachaSketch, resourcePath, resultFile);
         } else {
@@ -27,7 +29,7 @@ public class QuerySetEvaluator {
         }
     }
 
-    public static void evaluateQuerySetPachaFromResource(PachaSketch pachaSketch, String resourcePath, String resultFile) throws IOException {
+    public static void evaluateQuerySetPachaFromResource(Sketch pachaSketch, String resourcePath, String resultFile) throws IOException {
         List<List<Object>> queries = QueryFactory.fromResource(resourcePath);
         String[] split = resourcePath.split("/");
         String querySetName = split[split.length - 1];
@@ -35,7 +37,7 @@ public class QuerySetEvaluator {
         evaluateQuerySetPacha(pachaSketch, querySetName, queries, resultFile);
     }
 
-    public static void evaluateQuerySetPachaFromJson(PachaSketch pachaSketch, String querySetFile, String resultFile) throws IOException {
+    public static void evaluateQuerySetPachaFromJson(Sketch pachaSketch, String querySetFile, String resultFile) throws IOException {
         List<List<Object>> queries = QueryFactory.fromJson(querySetFile);
         String[] split = querySetFile.split("/");
         String querySetName = split[split.length - 1];
@@ -43,13 +45,23 @@ public class QuerySetEvaluator {
         evaluateQuerySetPacha(pachaSketch, querySetName, queries, resultFile);
     }
 
-    public static void evaluateQuerySetPacha(PachaSketch pachaSketch, String querySetName, List<List<Object>> queries, String resultFile) throws IOException {
+    public static void evaluateQuerySetPacha(Sketch pachaSketch, String querySetName, List<List<Object>> queries, String resultFile) throws IOException {
         List<PachaQueryResult> results = new ArrayList<>(queries.size());
         int queryIndex = 0;
         for(List<Object> query : queries){
             try {
                 long startTime = System.nanoTime();
-                PachaQueryResult result = pachaSketch.query(query, true, false);
+                PachaQueryResult result;
+                if(pachaSketch instanceof PachaSketch) {
+                    result = ((PachaSketch) pachaSketch).query(query, true, false);
+                } else if (pachaSketch instanceof PachaSketchSum) {
+                    result = ((PachaSketchSum) pachaSketch).query(query, true, false);
+                } else if (pachaSketch instanceof PachaSketchAvg) {
+                    result = ((PachaSketchAvg) pachaSketch).query(query, true, false);
+                } else {
+                    throw new IllegalArgumentException("Unsupported Pacha sketch type: " + pachaSketch.getClass().getName());
+                }
+
                 long queryTime = System.nanoTime() - startTime;
                 result.setRuntime(queryTime / 1_000_000.0); // Convert to milliseconds
                 results.add(result);

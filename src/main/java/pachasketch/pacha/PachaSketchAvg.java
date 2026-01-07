@@ -636,6 +636,9 @@ public class PachaSketchAvg implements Sketch {
         for (CountSketch cms : baseSketchesSum) {
             size += cms.getSizeInMB();
         }
+        for (CountSketch cms : baseSketchesSum) {
+            size += cms.getSizeInMB();
+        }
         return size;
     }
 

@@ -9,7 +9,7 @@ import java.util.List;
 public class Main {
     public static void main(String[] args) throws IOException {
         if (args.length < 2) {
-            System.out.println("Usage: java -jar <jarfile> <dataDir> <resultsBaseDir> [-a | -d | -e | -m | -p | -s | -u]");
+            System.out.println("Usage: java -jar <jarfile> <dataDir> <resultsBaseDir> [-a | -d | -e | -m | -p | -s | -u | -g]");
             return;
         }
 
@@ -25,6 +25,7 @@ public class Main {
             PachaParameters.run(dataDir, resultsBaseDir);
             Scalability.run(dataDir, resultsBaseDir);
             MemoryBudget.run(dataDir, resultsBaseDir);
+            DifferentAggregates.run(dataDir, resultsBaseDir);
         } else {
             if (flags.contains("-u")) {
                 UpdateEfficiency.run(dataDir, resultsBaseDir);
@@ -43,6 +44,9 @@ public class Main {
             }
             if (flags.contains("-m")) {
                 MemoryBudget.run(dataDir, resultsBaseDir);
+            }
+            if (flags.contains("-g")) {
+                DifferentAggregates.run(dataDir, resultsBaseDir);
             }
         }
     }

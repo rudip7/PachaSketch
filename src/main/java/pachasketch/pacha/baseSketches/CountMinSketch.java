@@ -10,8 +10,8 @@ import java.util.Arrays;
 import java.util.List;
 
 public class CountMinSketch {
-    private final int width;
-    private final int depth;
+    public final int width;
+    public final int depth;
     private final int[][] counters;
     private transient HashFunction[] hashFunctions;
     private final int[] seeds;
@@ -52,6 +52,14 @@ public class CountMinSketch {
         int[] indices = hash(element);
         for (int i = 0; i < depth; i++) {
             counters[i][indices[i]]++;
+        }
+        processedElements++;
+    }
+
+    public void update(String element, int increment) {
+        int[] indices = hash(element);
+        for (int i = 0; i < depth; i++) {
+            counters[i][indices[i]] += increment;
         }
         processedElements++;
     }

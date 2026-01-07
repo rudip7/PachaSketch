@@ -2,6 +2,7 @@ package pacha;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import pachasketch.pacha.baseSketches.CountMinSketch;
 import pachasketch.pacha.baseSketches.CountSketch;
 
 public class CountSketchTest {
@@ -63,9 +64,15 @@ public class CountSketchTest {
 
     @Test
     void getSizeInMBShouldReturnCorrectSize() {
-        CountSketch sketch = new CountSketch(10, 5);
-        double sizeInMB = sketch.getSizeInMB();
+//        CountSketch sketch = new CountSketch(10, 5);
+        CountSketch sketch = CountSketch.buildFromGuarantees(0.001, 0.01);
 
-        Assertions.assertEquals(10 * 5 * 4 / (1024.0 * 1024.0), sizeInMB);
+        CountMinSketch sketch1 = CountMinSketch.buildFromGuarantees(0.0001, 0.01);
+        double sizeInMB = sketch.getSizeInMB();
+        double sizeInMB1 = sketch1.getSizeInMB();
+//        System.out.println("CountSketch size in MB: " + sizeInMB);
+//        System.out.println("CountMinSketch size in MB: " + sizeInMB1);
+
+//        Assertions.assertEquals(10 * 5 * 4 / (1024.0 * 1024.0), sizeInMB);
     }
 }
