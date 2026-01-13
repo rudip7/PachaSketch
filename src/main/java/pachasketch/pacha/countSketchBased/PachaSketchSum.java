@@ -1,7 +1,10 @@
-package pachasketch.pacha;
+package pachasketch.pacha.countSketchBased;
 
 import pachasketch.Sketch;
-import pachasketch.pacha.baseSketches.*;
+import pachasketch.pacha.baseSketches.BloomFilter;
+import pachasketch.pacha.baseSketches.CountSketch;
+import pachasketch.pacha.baseSketches.Filter;
+import pachasketch.pacha.baseSketches.NodeTracker;
 import pachasketch.pacha.components.ADTree;
 import pachasketch.pacha.components.MaterializedCombinations;
 import pachasketch.pacha.components.NumericalBitmap;
@@ -12,7 +15,7 @@ import pachasketch.pacha.utils.QueryStats;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class PachaSketchAvg implements Sketch {
+public class PachaSketchSum implements Sketch {
     private final int levels;
     private final int numDimensions;
     private final int[] catColMap;
@@ -27,19 +30,17 @@ public class PachaSketchAvg implements Sketch {
     public Filter catIndex;
     public Filter numIndex;
     public Filter regionIndex;
-    public CountMinSketchLong[] baseSketchesSum;
-    public CountMinSketch[] baseSketchesCount;
+    public CountSketch[] baseSketches;
 
     public int forcedAlignment = -1; // -1 means no forced alignment
 
     private int maxNCubes = 1_000_000; // Default value, can be adjusted based on requirements
 
 
-    public PachaSketchAvg(int levels, int[] catColMap, int[] numColMap,
+    public PachaSketchSum(int levels, int[] catColMap, int[] numColMap,
                           int[] bases, ADTree adTree, MaterializedCombinations materialized,
                           Filter catIndex, Filter numIndex, Filter regionIndex,
-                          CountMinSketchLong[] baseSketchesSum,
-                          CountMinSketch[] baseSketchesCount) {
+                          CountSketch[] baseSketches) {
         this.levels = levels;
         this.numDimensions = catColMap.length + numColMap.length;
         this.catColMap = catColMap;
@@ -65,9 +66,8 @@ public class PachaSketchAvg implements Sketch {
 
         this.numIndex = numIndex;
         this.regionIndex = regionIndex;
-        assert baseSketchesSum.length == levels : "Number of base sketches must match number of levels";
-        this.baseSketchesSum = baseSketchesSum;
-        this.baseSketchesCount = baseSketchesCount;
+        assert baseSketches.length == levels : "Number of base sketches must match number of levels";
+        this.baseSketches = baseSketches;
 
         this.processedElements = 0;
     }
@@ -161,9 +161,7 @@ public class PachaSketchAvg implements Sketch {
         for(int level : mappedRegions.keySet()){
             List<String> regions = mappedRegions.get(level);
             regionIndex.updateBatch(regions);
-            baseSketchesSum[level].updateBatch(regions, increment);
-            baseSketchesCount[level].updateBatch(regions, 1);
-
+            baseSketches[level].updateBatch(regions, increment);
         }
 
         processedElements++;
@@ -556,8 +554,8 @@ public class PachaSketchAvg implements Sketch {
                 forcedAlignment);
     }
 
-    public double query(List<Object> query){
-        return query(query, false, false).estimate();
+    public int query(List<Object> query){
+        return (int) query(query, false, false).estimate();
     }
 
     public PachaQueryResult query(List<Object> query, boolean detailed, boolean debug){
@@ -580,16 +578,13 @@ public class PachaSketchAvg implements Sketch {
             return new PachaQueryResult(0); // No valid regions found
         }
 
-        long estimateSum = 0;
-        long estimateCount = 0;
+        int estimate = 0;
         Map<Integer, List<String>> queryRegions = queryResult.regions();
         for (Integer level : queryRegions.keySet()){
             List<String> regions = queryRegions.get(level);
-            estimateSum += baseSketchesSum[level].queryBatch(regions);
-            estimateCount += baseSketchesCount[level].queryBatch(regions);
+            estimate += baseSketches[level].queryBatch(regions);
         }
 
-        double estimate = estimateCount > 0 ? (double) estimateSum / estimateCount : 0.0;
         if(debug){
             System.out.println("Estimate: " + estimate);
         }
@@ -630,10 +625,7 @@ public class PachaSketchAvg implements Sketch {
         size += catIndex.getSizeInMB();
         size += numIndex.getSizeInMB();
         size += regionIndex.getSizeInMB();
-        for (CountMinSketchLong cms : baseSketchesSum) {
-            size += cms.getSizeInMB();
-        }
-        for (CountMinSketch cms : baseSketchesCount) {
+        for (CountSketch cms : baseSketches) {
             size += cms.getSizeInMB();
         }
         return size;
@@ -792,7 +784,7 @@ public class PachaSketchAvg implements Sketch {
         if (obj == null || getClass() != obj.getClass()) {
             return false;
         }
-        PachaSketchAvg other = (PachaSketchAvg) obj;
+        PachaSketchSum other = (PachaSketchSum) obj;
         return levels == other.levels &&
                numDimensions == other.numDimensions &&
                maxNCubes == other.maxNCubes &&
@@ -801,7 +793,7 @@ public class PachaSketchAvg implements Sketch {
                Arrays.equals(numColMap, other.numColMap) &&
                Arrays.equals(bases, other.bases) &&
                Arrays.equals(numericalBitmaps, other.numericalBitmaps) &&
-               Arrays.equals(baseSketchesSum, other.baseSketchesSum) &&
+               Arrays.equals(baseSketches, other.baseSketches) &&
                Objects.equals(adTree, other.adTree) &&
                Objects.equals(materialized, other.materialized) &&
                Objects.equals(catIndex, other.catIndex) &&

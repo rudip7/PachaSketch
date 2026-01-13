@@ -34,7 +34,7 @@ public class PachaSketchSum implements Sketch {
     public Filter catIndex;
     public Filter numIndex;
     public Filter regionIndex;
-    public CountSketch[] baseSketches;
+    public CountMinSketchLong[] baseSketches;
 
     public int forcedAlignment = -1; // -1 means no forced alignment
 
@@ -44,7 +44,7 @@ public class PachaSketchSum implements Sketch {
     public PachaSketchSum(int levels, int[] catColMap, int[] numColMap,
                           int[] bases, ADTree adTree, MaterializedCombinations materialized,
                           Filter catIndex, Filter numIndex, Filter regionIndex,
-                          CountSketch[] baseSketches) {
+                          CountMinSketchLong[] baseSketches) {
         this.levels = levels;
         this.numDimensions = catColMap.length + numColMap.length;
         this.catColMap = catColMap;
@@ -582,7 +582,7 @@ public class PachaSketchSum implements Sketch {
             return new PachaQueryResult(0); // No valid regions found
         }
 
-        int estimate = 0;
+        long estimate = 0;
         Map<Integer, List<String>> queryRegions = queryResult.regions();
         for (Integer level : queryRegions.keySet()){
             List<String> regions = queryRegions.get(level);
@@ -629,7 +629,7 @@ public class PachaSketchSum implements Sketch {
         size += catIndex.getSizeInMB();
         size += numIndex.getSizeInMB();
         size += regionIndex.getSizeInMB();
-        for (CountSketch cms : baseSketches) {
+        for (CountMinSketchLong cms : baseSketches) {
             size += cms.getSizeInMB();
         }
         return size;

@@ -1,7 +1,10 @@
-package pachasketch.pacha;
+package pachasketch.pacha.countSketchBased;
 
 import pachasketch.Sketch;
-import pachasketch.pacha.baseSketches.*;
+import pachasketch.pacha.baseSketches.BloomFilter;
+import pachasketch.pacha.baseSketches.CountSketch;
+import pachasketch.pacha.baseSketches.Filter;
+import pachasketch.pacha.baseSketches.NodeTracker;
 import pachasketch.pacha.components.ADTree;
 import pachasketch.pacha.components.MaterializedCombinations;
 import pachasketch.pacha.components.NumericalBitmap;
@@ -27,8 +30,8 @@ public class PachaSketchAvg implements Sketch {
     public Filter catIndex;
     public Filter numIndex;
     public Filter regionIndex;
-    public CountMinSketchLong[] baseSketchesSum;
-    public CountMinSketch[] baseSketchesCount;
+    public CountSketch[] baseSketchesSum;
+    public CountSketch[] baseSketchesCount;
 
     public int forcedAlignment = -1; // -1 means no forced alignment
 
@@ -38,8 +41,8 @@ public class PachaSketchAvg implements Sketch {
     public PachaSketchAvg(int levels, int[] catColMap, int[] numColMap,
                           int[] bases, ADTree adTree, MaterializedCombinations materialized,
                           Filter catIndex, Filter numIndex, Filter regionIndex,
-                          CountMinSketchLong[] baseSketchesSum,
-                          CountMinSketch[] baseSketchesCount) {
+                          CountSketch[] baseSketchesSum,
+                          CountSketch[] baseSketchesCount) {
         this.levels = levels;
         this.numDimensions = catColMap.length + numColMap.length;
         this.catColMap = catColMap;
@@ -580,8 +583,8 @@ public class PachaSketchAvg implements Sketch {
             return new PachaQueryResult(0); // No valid regions found
         }
 
-        long estimateSum = 0;
-        long estimateCount = 0;
+        int estimateSum = 0;
+        int estimateCount = 0;
         Map<Integer, List<String>> queryRegions = queryResult.regions();
         for (Integer level : queryRegions.keySet()){
             List<String> regions = queryRegions.get(level);
@@ -630,10 +633,10 @@ public class PachaSketchAvg implements Sketch {
         size += catIndex.getSizeInMB();
         size += numIndex.getSizeInMB();
         size += regionIndex.getSizeInMB();
-        for (CountMinSketchLong cms : baseSketchesSum) {
+        for (CountSketch cms : baseSketchesSum) {
             size += cms.getSizeInMB();
         }
-        for (CountMinSketch cms : baseSketchesCount) {
+        for (CountSketch cms : baseSketchesSum) {
             size += cms.getSizeInMB();
         }
         return size;

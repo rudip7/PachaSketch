@@ -5,23 +5,22 @@ import com.google.common.hash.Hashing;
 import com.google.gson.Gson;
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class CountMinSketch {
+public class CountMinSketchLong {
     public final int width;
     public final int depth;
-    private final int[][] counters;
+    private final long[][] counters;
     private transient HashFunction[] hashFunctions;
     private final int[] seeds;
 
     private int processedElements = 0;
 
-    public CountMinSketch(int width, int depth) {
+    public CountMinSketchLong(int width, int depth) {
         this.width = width;
         this.depth = depth;
-        this.counters = new int[depth][width];
+        this.counters = new long[depth][width];
 
         this.hashFunctions = new HashFunction[this.depth];
         this.seeds = new int[this.depth];
@@ -32,11 +31,11 @@ public class CountMinSketch {
         }
     }
 
-    public static CountMinSketch buildFromGuarantees(double epsilon, double delta) {
+    public static CountMinSketchLong buildFromGuarantees(double epsilon, double delta) {
         // Calculate width and depth based on epsilon and delta
         int width = (int) Math.ceil(Math.E / epsilon);
         int depth = (int) Math.ceil(Math.log(1 / delta));
-        return new CountMinSketch(width, depth);
+        return new CountMinSketchLong(width, depth);
     }
 
     private int[] hash(String element){
@@ -92,9 +91,9 @@ public class CountMinSketch {
         }
     }
 
-    public int query(String element) {
+    public long query(String element) {
         int[] indices = hash(element);
-        int minEstimate = Integer.MAX_VALUE;
+        long minEstimate = Integer.MAX_VALUE;
         for (int i = 0; i < depth; i++) {
             minEstimate = Math.min(minEstimate, counters[i][indices[i]]);
         }
@@ -109,7 +108,7 @@ public class CountMinSketch {
                 int hash = hashFunctions[i].hashString(element, StandardCharsets.UTF_8).asInt();
                 indices[i] = Math.floorMod(hash, width);
             }
-            int minEstimate = Integer.MAX_VALUE;
+            long minEstimate = Integer.MAX_VALUE;
             for (int i = 0; i < depth; i++) {
                 minEstimate = Math.min(minEstimate, counters[i][indices[i]]);
             }
@@ -118,7 +117,7 @@ public class CountMinSketch {
         return totalEstimate;
     }
 
-    public void merge(CountMinSketch other) {
+    public void merge(CountMinSketchLong other) {
         if (this.width != other.width || this.depth != other.depth) {
             throw new IllegalArgumentException("Cannot merge CountMinSketch instances with different dimensions.");
         }
@@ -146,14 +145,14 @@ public class CountMinSketch {
         if (obj == null || getClass() != obj.getClass()) {
             return false;
         }
-        CountMinSketch other = (CountMinSketch) obj;
+        CountMinSketchLong other = (CountMinSketchLong) obj;
         if (this.width != other.width || this.depth != other.depth) {
             return false;
         }
         if (this.processedElements != other.processedElements) {
             return false;
         }
-        if (!java.util.Arrays.equals(this.seeds, other.seeds)) {
+        if (!Arrays.equals(this.seeds, other.seeds)) {
             return false;
         }
         return Arrays.deepEquals(this.counters, other.counters);
@@ -165,9 +164,9 @@ public class CountMinSketch {
         return gson.toJson(this);
     }
 
-    public static CountMinSketch fromJson(String json) {
+    public static CountMinSketchLong fromJson(String json) {
         Gson gson = new Gson();
-        CountMinSketch sketch = gson.fromJson(json, CountMinSketch.class);
+        CountMinSketchLong sketch = gson.fromJson(json, CountMinSketchLong.class);
 
         // Rebuild hashFunctions using the seeds
         sketch.hashFunctions = new HashFunction[sketch.depth];

@@ -19,9 +19,9 @@ public class PachaSketchSumFactory {
         BloomFilter catIndex = new BloomFilter(catIndexK, catIndexM);
         BloomFilter numIndex = new BloomFilter(numIndexK, numIndexM);
         BloomFilter regionIndex = new BloomFilter(regionIndexK, regionIndexM);
-        CountSketch[] baseSketches = new CountSketch[levels];
+        CountMinSketchLong[] baseSketches = new CountMinSketchLong[levels];
         for (int i = 0; i < levels; i++) {
-            baseSketches[i] = new CountSketch(width, depth);
+            baseSketches[i] = new CountMinSketchLong(width, depth);
         }
         return new PachaSketchSum(levels, catColMap, numColMap, bases, adTree, materialized,
                 catIndex, numIndex, regionIndex, baseSketches);
@@ -44,9 +44,9 @@ public class PachaSketchSumFactory {
         Filter numIndex = createFilter(falsePositiveRate, (long) nElements * numUpdates);
         Filter regionIndex = createFilter(falsePositiveRate, (long) nElements * regionUpdates);
 
-        CountSketch[] baseSketches = new CountSketch[levels];
+        CountMinSketchLong[] baseSketches = new CountMinSketchLong[levels];
         for (int i = 0; i < levels; i++) {
-            baseSketches[i] = CountSketch.buildFromGuarantees(adjustedEps, delta);
+            baseSketches[i] = CountMinSketchLong.buildFromGuarantees(adjustedEps, delta);
         }
 
         return new PachaSketchSum(levels, catColMap, numColMap, bases, adTree, materialized,
@@ -68,9 +68,9 @@ public class PachaSketchSumFactory {
         Filter numIndex = createFilter(falsePositiveRate, (long) nElements * numUpdates);
         Filter regionIndex = createFilter(falsePositiveRate, (long) nElements * regionUpdates);
 
-        CountSketch[] baseSketchesSum = new CountSketch[levels];
+        CountMinSketchLong[] baseSketchesSum = new CountMinSketchLong[levels];
         for (int i = 0; i < levels; i++) {
-            baseSketchesSum[i] = new CountSketch(width, depth);
+            baseSketchesSum[i] = new CountMinSketchLong(width, depth);
         }
 
         return new PachaSketchSum(levels, catColMap, numColMap, bases, adTree, materialized,

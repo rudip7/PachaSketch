@@ -8,6 +8,7 @@ import pachasketch.pacha.PachaSketchAvg;
 import pachasketch.pacha.PachaSketchSum;
 import pachasketch.pacha.utils.PachaQueryResult;
 import pachasketch.pacha.utils.QueryStats;
+import pachasketch.sampling.PrioritySampler;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -18,6 +19,7 @@ import java.util.List;
 import static java.nio.file.Files.createDirectories;
 
 public class QuerySetEvaluator {
+
 
     public static void evaluateQuerySetFromResource(Sketch pachaSketch, String resourcePath, String resultFile) throws IOException {
         if (pachaSketch instanceof PachaSketch || pachaSketch instanceof PachaSketchSum || pachaSketch instanceof PachaSketchAvg) {
@@ -179,6 +181,58 @@ public class QuerySetEvaluator {
                 row.append(result.getEstimate()).append(",")
                         .append(result.getRuntime()).append(",")
                         .append(result.getEstimateCase());
+                // Write the row to the file
+                writer.write(row.toString() + "\n");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to write results to file: " + resultFile, e);
+        }
+    }
+
+
+    public static void evaluateQuerySetSamplerFromResource(PrioritySampler sampler, String resourcePath, String resultFile) throws IOException {
+        List<List<Object>> queries = QueryFactory.fromResource(resourcePath);
+        String[] split = resourcePath.split("/");
+        String querySetName = split[split.length - 1];
+
+        evaluateQuerySetSampler(sampler, querySetName, queries, resultFile);
+    }
+
+    public static void evaluateQuerySetSampler(PrioritySampler sampler, String querySetName, List<List<Object>> queries, String resultFile) throws IOException {
+        List<SimpleQueryResult> results = new ArrayList<>(queries.size());
+        int queryIndex = 0;
+        for(List<Object> query : queries){
+            try {
+                long startTime = System.nanoTime();
+                double estimate = sampler.query(query);
+                long queryTime = System.nanoTime() - startTime;
+                SimpleQueryResult result = new SimpleQueryResult(estimate);
+                result.setRuntime(queryTime / 1_000_000.0); // Convert to milliseconds
+                results.add(result);
+            } catch (Exception e) {
+                throw new RuntimeException("Error processing query at index " + queryIndex + " from set "+querySetName+" : " + query, e);
+            }
+            queryIndex++;
+        }
+
+        writeResultsToFile(results, resultFile);
+    }
+
+    private static void writeResultsToFile(List<SimpleQueryResult> results, String resultFile) throws IOException {
+        String header = "estimates,runtime";
+        createDirectories(Paths.get(resultFile).getParent());
+        try (FileWriter writer = new FileWriter(resultFile)) {
+            // Write the header
+            writer.write(header + "\n");
+
+            // Write each QueryResult as a row
+            for (SimpleQueryResult result : results) {
+                StringBuilder row = new StringBuilder();
+
+                // Add estimate
+                row.append(result.getEstimate()).append(",")
+                        .append(result.getRuntime());
                 // Write the row to the file
                 writer.write(row.toString() + "\n");
             }

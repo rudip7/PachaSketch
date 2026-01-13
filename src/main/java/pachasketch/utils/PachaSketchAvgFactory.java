@@ -2,10 +2,7 @@ package pachasketch.utils;
 
 import pachasketch.pacha.PachaSketchAvg;
 import pachasketch.pacha.PachaSketchSum;
-import pachasketch.pacha.baseSketches.BloomFilter;
-import pachasketch.pacha.baseSketches.CountSketch;
-import pachasketch.pacha.baseSketches.Filter;
-import pachasketch.pacha.baseSketches.ScalableBloomFilter;
+import pachasketch.pacha.baseSketches.*;
 import pachasketch.pacha.components.ADTree;
 import pachasketch.pacha.components.MaterializedCombinations;
 
@@ -21,13 +18,13 @@ public class PachaSketchAvgFactory {
         BloomFilter catIndex = new BloomFilter(catIndexK, catIndexM);
         BloomFilter numIndex = new BloomFilter(numIndexK, numIndexM);
         BloomFilter regionIndex = new BloomFilter(regionIndexK, regionIndexM);
-        CountSketch[] baseSketchesSum = new CountSketch[levels];
+        CountMinSketchLong[] baseSketchesSum = new CountMinSketchLong[levels];
         for (int i = 0; i < levels; i++) {
-            baseSketchesSum[i] = new CountSketch(width, depth);
+            baseSketchesSum[i] = new CountMinSketchLong(width, depth);
         }
-        CountSketch[] baseSketchesCount = new CountSketch[levels];
+        CountMinSketch[] baseSketchesCount = new CountMinSketch[levels];
         for (int i = 0; i < levels; i++) {
-            baseSketchesCount[i] = new CountSketch(width, depth);
+            baseSketchesCount[i] = new CountMinSketch(width, depth);
         }
         return new PachaSketchAvg(levels, catColMap, numColMap, bases, adTree, materialized,
                 catIndex, numIndex, regionIndex, baseSketchesSum, baseSketchesCount);
@@ -50,13 +47,13 @@ public class PachaSketchAvgFactory {
         Filter numIndex = createFilter(falsePositiveRate, (long) nElements * numUpdates);
         Filter regionIndex = createFilter(falsePositiveRate, (long) nElements * regionUpdates);
 
-        CountSketch[] baseSketchesSum = new CountSketch[levels];
+        CountMinSketchLong[] baseSketchesSum = new CountMinSketchLong[levels];
         for (int i = 0; i < levels; i++) {
-            baseSketchesSum[i] = CountSketch.buildFromGuarantees(adjustedEps, delta);
+            baseSketchesSum[i] = CountMinSketchLong.buildFromGuarantees(adjustedEps, delta);
         }
-        CountSketch[] baseSketchesCount = new CountSketch[levels];
+        CountMinSketch[] baseSketchesCount = new CountMinSketch[levels];
         for (int i = 0; i < levels; i++) {
-            baseSketchesCount[i] = CountSketch.buildFromGuarantees(adjustedEps, delta);
+            baseSketchesCount[i] = CountMinSketch.buildFromGuarantees(adjustedEps, delta);
         }
 
         return new PachaSketchAvg(levels, catColMap, numColMap, bases, adTree, materialized,
@@ -78,13 +75,13 @@ public class PachaSketchAvgFactory {
         Filter numIndex = createFilter(falsePositiveRate, (long) nElements * numUpdates);
         Filter regionIndex = createFilter(falsePositiveRate, (long) nElements * regionUpdates);
 
-        CountSketch[] baseSketchesSum = new CountSketch[levels];
+        CountMinSketchLong[] baseSketchesSum = new CountMinSketchLong[levels];
         for (int i = 0; i < levels; i++) {
-            baseSketchesSum[i] = new CountSketch(width, depth);
+            baseSketchesSum[i] = new CountMinSketchLong(width, depth);
         }
-        CountSketch[] baseSketchesCount = new CountSketch[levels];
+        CountMinSketch[] baseSketchesCount = new CountMinSketch[levels];
         for (int i = 0; i < levels; i++) {
-            baseSketchesCount[i] = new CountSketch(width, depth);
+            baseSketchesCount[i] = new CountMinSketch(width, depth);
         }
 
         return new PachaSketchAvg(levels, catColMap, numColMap, bases, adTree, materialized,
