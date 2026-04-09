@@ -3,9 +3,7 @@ package pachasketch.experiments.runners;
 import pachasketch.Sketch;
 import pachasketch.experiments.utils.*;
 import pachasketch.omni.OmniSketch;
-import pachasketch.pacha.PachaSketch;
-import pachasketch.pacha.PachaSketchAvg;
-import pachasketch.pacha.PachaSketchSum;
+import pachasketch.pacha.*;
 import pachasketch.pacha.baseSketches.CountMinSketch;
 import pachasketch.sampling.PrioritySampler;
 import pachasketch.utils.DataLoaders;
@@ -30,11 +28,17 @@ public class DifferentAggregates {
         int width = pachaSketch.baseSketches[0].width;
         int depth = pachaSketch.baseSketches[0].depth;
 
-        PachaSketchSum pachaSketchSum = PreparePachaSketchSum.loadTpchWD(falsePositiveRate, width, depth, levels, dataDir+dataset);
-        runDatasetQueries(pachaSketchSum, dataDir+dataset, resultsBaseDir+"/aggregates");
-//
-        PachaSketchAvg pachaSketchAvg = PreparePachaSketchAvg.loadTpchWD(falsePositiveRate, width, depth, levels, dataDir+dataset);
-        runDatasetQueries(pachaSketchAvg, dataDir+dataset, resultsBaseDir+"/aggregates");
+//        PachaSketchSum pachaSketchSum = PreparePachaSketchSum.loadTpchWD(falsePositiveRate, width, depth, levels, dataDir+dataset);
+//        runDatasetQueries(pachaSketchSum, dataDir+dataset, resultsBaseDir+"/aggregates", "sums");
+////
+//        PachaSketchAvg pachaSketchAvg = PreparePachaSketchAvg.loadTpchWD(falsePositiveRate, width, depth, levels, dataDir+dataset);
+//        runDatasetQueries(pachaSketchAvg, dataDir+dataset, resultsBaseDir+"/aggregates", "avgs");
+
+        PachaSketchMin pachaSketchMin = PreparePachaSketchMin.loadTpchWD(falsePositiveRate, width, depth, levels, dataDir+dataset);
+        runDatasetQueries(pachaSketchMin, dataDir+dataset, resultsBaseDir+"/aggregates", "mins");
+
+        PachaSketchMax pachaSketchMax = PreparePachaSketchMax.loadTpchWD(falsePositiveRate, width, depth, levels, dataDir+dataset);
+        runDatasetQueries(pachaSketchMax, dataDir+dataset, resultsBaseDir+"/aggregates", "maxs");
 
 //        For now hard-coded TPCH
         int[] catColMap = new int[]{0, 1, 2, 3, 4};
@@ -61,7 +65,7 @@ public class DifferentAggregates {
     }
 
 
-    public static void runDatasetQueries(Sketch sketch, String pathToData, String resultsBaseDir) throws IOException {
+    public static void runDatasetQueries(Sketch sketch, String pathToData, String resultsBaseDir, String aggType) throws IOException {
         DatasetMetadata datasetMetadata = Utils.getDatasetMetadata(pathToData);
         String datasetName = datasetMetadata.getDatasetName();
 
@@ -72,12 +76,8 @@ public class DifferentAggregates {
         System.out.println("Evaluating random queries...");
         Files.createDirectories(Path.of(resultsDir));
         String queriesFile = baseResourcePath + datasetName + "_random.json";
-        String resultFile;
-        if (sketch instanceof PachaSketchSum){
-            resultFile = resultsDir+"/"+datasetName+"_sums.csv";
-        } else {
-            resultFile = resultsDir+"/"+datasetName+"_avgs.csv";
-        }
+        String resultFile = resultsDir+"/"+datasetName+"_"+aggType+".csv";
+
 
         QuerySetEvaluator.evaluateQuerySetFromResource(sketch, queriesFile, resultFile);
 

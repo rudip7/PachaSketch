@@ -1,6 +1,7 @@
 package pachasketch.utils;
 
 import pachasketch.Sketch;
+import pachasketch.SketchWithAggregateColumn;
 import pachasketch.omni.OmniSketch;
 import pachasketch.omni.utils.OmniQueryResult;
 import pachasketch.pacha.PachaSketch;
@@ -22,7 +23,7 @@ public class QuerySetEvaluator {
 
 
     public static void evaluateQuerySetFromResource(Sketch pachaSketch, String resourcePath, String resultFile) throws IOException {
-        if (pachaSketch instanceof PachaSketch || pachaSketch instanceof PachaSketchSum || pachaSketch instanceof PachaSketchAvg) {
+        if (pachaSketch instanceof PachaSketch || pachaSketch instanceof SketchWithAggregateColumn) {
             evaluateQuerySetPachaFromResource(pachaSketch, resourcePath, resultFile);
         } else if (pachaSketch instanceof OmniSketch) {
             evaluateQuerySetOmniFromResource((OmniSketch) pachaSketch, resourcePath, resultFile);
@@ -56,8 +57,8 @@ public class QuerySetEvaluator {
                 PachaQueryResult result;
                 if(pachaSketch instanceof PachaSketch) {
                     result = ((PachaSketch) pachaSketch).query(query, true, false);
-                } else if (pachaSketch instanceof PachaSketchSum) {
-                    result = ((PachaSketchSum) pachaSketch).query(query, true, false);
+                } else if (pachaSketch instanceof SketchWithAggregateColumn) {
+                    result = ((SketchWithAggregateColumn) pachaSketch).query(query, true, false);
                 } else if (pachaSketch instanceof PachaSketchAvg) {
                     result = ((PachaSketchAvg) pachaSketch).query(query, true, false);
                 } else {
@@ -118,7 +119,7 @@ public class QuerySetEvaluator {
                 } else {
                     // Fill with zeros if QueryStats is null
                     //TODO: Check if possible
-                    row.append("0,0,0,0,0,0,0,0,0,0,0,0");
+                    row.append("0,0,0,0,0,0,0,0,0,0,0");
                 }
 
                 // Write the row to the file

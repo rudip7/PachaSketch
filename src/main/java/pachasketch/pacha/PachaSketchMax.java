@@ -1,9 +1,5 @@
 package pachasketch.pacha;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.stream.JsonWriter;
 import pachasketch.Sketch;
 import pachasketch.SketchWithAggregateColumn;
 import pachasketch.pacha.baseSketches.*;
@@ -14,13 +10,10 @@ import pachasketch.pacha.utils.BAdicUtils;
 import pachasketch.pacha.utils.PachaQueryResult;
 import pachasketch.pacha.utils.QueryStats;
 
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Writer;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class PachaSketchSum implements SketchWithAggregateColumn {
+public class PachaSketchMax implements SketchWithAggregateColumn {
     private final int levels;
     private final int numDimensions;
     private final int[] catColMap;
@@ -35,17 +28,17 @@ public class PachaSketchSum implements SketchWithAggregateColumn {
     public Filter catIndex;
     public Filter numIndex;
     public Filter regionIndex;
-    public CountMinSketchLong[] baseSketches;
+    public MaxSketch[] baseSketches;
 
     public int forcedAlignment = -1; // -1 means no forced alignment
 
     private int maxNCubes = 1_000_000; // Default value, can be adjusted based on requirements
 
 
-    public PachaSketchSum(int levels, int[] catColMap, int[] numColMap,
+    public PachaSketchMax(int levels, int[] catColMap, int[] numColMap,
                           int[] bases, ADTree adTree, MaterializedCombinations materialized,
                           Filter catIndex, Filter numIndex, Filter regionIndex,
-                          CountMinSketchLong[] baseSketches) {
+                          MaxSketch[] baseSketches) {
         this.levels = levels;
         this.numDimensions = catColMap.length + numColMap.length;
         this.catColMap = catColMap;
@@ -112,7 +105,7 @@ public class PachaSketchSum implements SketchWithAggregateColumn {
     }
 
     @Override
-    public void update(String[] element, int increment) {
+    public void update(String[] element, int value) {
         // Extract categorical and numerical values
         List<String> catValues = new ArrayList<>(catColMap.length);
         int[] numValues = new int[numColMap.length];
@@ -167,7 +160,7 @@ public class PachaSketchSum implements SketchWithAggregateColumn {
         for(int level : mappedRegions.keySet()){
             List<String> regions = mappedRegions.get(level);
             regionIndex.updateBatch(regions);
-            baseSketches[level].updateBatch(regions, increment);
+            baseSketches[level].updateBatch(regions, value);
         }
 
         processedElements++;
@@ -584,11 +577,12 @@ public class PachaSketchSum implements SketchWithAggregateColumn {
             return new PachaQueryResult(0); // No valid regions found
         }
 
-        long estimate = 0;
+        long estimate = Integer.MIN_VALUE;
         Map<Integer, List<String>> queryRegions = queryResult.regions();
         for (Integer level : queryRegions.keySet()){
             List<String> regions = queryRegions.get(level);
-            estimate += baseSketches[level].queryBatch(regions);
+            int regionEstimate = baseSketches[level].queryBatch(regions);
+            estimate = Math.max(estimate, regionEstimate);
         }
 
         if(debug){
@@ -631,7 +625,7 @@ public class PachaSketchSum implements SketchWithAggregateColumn {
         size += catIndex.getSizeInMB();
         size += numIndex.getSizeInMB();
         size += regionIndex.getSizeInMB();
-        for (CountMinSketchLong cms : baseSketches) {
+        for (MaxSketch cms : baseSketches) {
             size += cms.getSizeInMB();
         }
         return size;
@@ -790,7 +784,7 @@ public class PachaSketchSum implements SketchWithAggregateColumn {
         if (obj == null || getClass() != obj.getClass()) {
             return false;
         }
-        PachaSketchSum other = (PachaSketchSum) obj;
+        PachaSketchMax other = (PachaSketchMax) obj;
         return levels == other.levels &&
                numDimensions == other.numDimensions &&
                maxNCubes == other.maxNCubes &&

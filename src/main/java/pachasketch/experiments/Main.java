@@ -9,7 +9,7 @@ import java.util.List;
 public class Main {
     public static void main(String[] args) throws IOException {
         if (args.length < 2) {
-            System.out.println("Usage: java -jar <jarfile> <dataDir> <resultsBaseDir> [-a | -d | -e | -m | -p | -s | -u | -g]");
+            System.out.println("Usage: java -jar <jarfile> <dataDir> <resultsBaseDir> [-a | -d | -e | -m | -p | -s | -u | -g | -t | -c | -x]");
             return;
         }
 
@@ -26,6 +26,9 @@ public class Main {
             Scalability.run(dataDir, resultsBaseDir);
             MemoryBudget.run(dataDir, resultsBaseDir);
             DifferentAggregates.run(dataDir, resultsBaseDir);
+            ADTreeInfluence.run(dataDir, resultsBaseDir);
+            MaxNumberCubes.run(dataDir, resultsBaseDir);
+            ProjectedSubSpaces.run(dataDir, resultsBaseDir);
         } else {
             if (flags.contains("-u")) {
                 UpdateEfficiency.run(dataDir, resultsBaseDir);
@@ -47,6 +50,15 @@ public class Main {
             }
             if (flags.contains("-g")) {
                 DifferentAggregates.run(dataDir, resultsBaseDir);
+            }
+            if (flags.contains("-t")) {
+                ADTreeInfluence.run(dataDir, resultsBaseDir);
+            }
+            if (flags.contains("-c")) {
+                MaxNumberCubes.run(dataDir, resultsBaseDir);
+            }
+            if (flags.contains("-x")) {
+                ProjectedSubSpaces.run(dataDir, resultsBaseDir);
             }
         }
     }

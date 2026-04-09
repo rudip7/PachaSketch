@@ -1,9 +1,9 @@
 package pachasketch.utils;
 
+import pachasketch.Sketch;
+import pachasketch.SketchWithAggregateColumn;
 import pachasketch.omni.OmniSketch;
-import pachasketch.pacha.PachaSketch;
-import pachasketch.pacha.PachaSketchAvg;
-import pachasketch.pacha.PachaSketchSum;
+import pachasketch.pacha.*;
 import pachasketch.sampling.PrioritySampler;
 
 import java.io.BufferedReader;
@@ -128,10 +128,10 @@ public class DataLoaders {
     }
 
 
-    public static double loadCSV(PachaSketchSum pachaSketch, String filePath, int batchSize, int aggIndex) throws IOException {
+    public static double loadCSV(SketchWithAggregateColumn pachaSketch, String filePath, int batchSize, int aggIndex) throws IOException {
         return loadCSV(pachaSketch, filePath, batchSize, -1, aggIndex);
     }
-    public static double loadCSV(PachaSketchSum pachaSketch, String filePath, int batchSize, int limit, int aggIndex) throws IOException {
+    public static double loadCSV(SketchWithAggregateColumn pachaSketch, String filePath, int batchSize, int limit, int aggIndex) throws IOException {
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
             String header = br.readLine(); // Read the header
             if (header == null) {
