@@ -50,6 +50,7 @@ public class PrepareOmniSketch {
         int[] catColMap = new int[]{0, 1, 2, 3, 4};
         int[] numColMap = new int[]{5, 6, 7, 8, 9};
         int dyadicRangeBits = 17;
+//        int dyadicRangeBits = 16;
 
         return OmniSketchFactory.buildWithMemoryBudget(memBudget, catColMap, numColMap, delta, eps, dyadicRangeBits);
     }

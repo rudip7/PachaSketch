@@ -17,7 +17,7 @@ public class DifferentDatasets {
 
     public static void run(String dataDir, String resultsBaseDir) throws IOException {
         String[] datasets = new String[]{
-                "/lineitem_0.1.csv",
+                "/lineitem_1.csv",
 //                "/acs_folktables.csv",
 //                "/online_retail.csv",
 //                "/bank_marketing.csv"
@@ -26,12 +26,12 @@ public class DifferentDatasets {
         System.out.println("Running different datasets experiments...");
         for (String dataset : datasets) {
             System.out.println("Running dataset: " + dataset);
-//            double pachaSize = runPacha(dataDir+dataset, resultsBaseDir+"/pacha");
-            double falsePositiveRate = 0.01;
-            double eps = 0.0001;
-            double delta = 0.01;
-            int levels = 5;
-            double pachaSize = PreparePachaSketch.forTpch(falsePositiveRate, eps, delta, levels, 599_934).getSizeInMB();
+            double pachaSize = runPacha(dataDir+dataset, resultsBaseDir+"/pacha");
+//            double falsePositiveRate = 0.01;
+//            double eps = 0.0001;
+//            double delta = 0.01;
+//            int levels = 5;
+//            double pachaSize = PreparePachaSketch.forTpch(falsePositiveRate, eps, delta, levels, 599_934*3).getSizeInMB();
             runOmni(pachaSize, dataDir+dataset, resultsBaseDir+"/omni");
         }
         System.out.println("Finished different datasets experiments.");
@@ -67,7 +67,7 @@ public class DifferentDatasets {
         String queriesFile = baseResourcePath + datasetName + "_random.json";
         String resultFile = resultsDir+"/"+datasetName+"_random.csv";
         QuerySetEvaluator.evaluateQuerySetFromResource(sketch, queriesFile, resultFile);
-/*
+
         // Selectivity-based queries
         System.out.println("Evaluating selectivity-based queries...");
         Files.createDirectories(Path.of(resultsDir+"/selectivities"));
@@ -105,7 +105,7 @@ public class DifferentDatasets {
             QuerySetEvaluator.evaluateQuerySetFromResource(sketch, queriesFile, resultFile);
         }
 
- */
+
 
     }
 
